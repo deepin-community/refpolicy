@@ -1,0 +1,24 @@
+Index: refpolicy-2.20220427/config/appconfig-mcs/seusers
+===================================================================
+--- refpolicy-2.20220427.orig/config/appconfig-mcs/seusers
++++ refpolicy-2.20220427/config/appconfig-mcs/seusers
+@@ -1,2 +1,3 @@
+ root:root:s0-mcs_systemhigh
+ __default__:user_u:s0
++sddm:xdm:s0
+Index: refpolicy-2.20220427/config/appconfig-mls/seusers
+===================================================================
+--- refpolicy-2.20220427.orig/config/appconfig-mls/seusers
++++ refpolicy-2.20220427/config/appconfig-mls/seusers
+@@ -1,2 +1,3 @@
+ root:root:s0-mls_systemhigh
+ __default__:user_u:s0
++sddm:xdm:s0
+Index: refpolicy-2.20220427/config/appconfig-standard/seusers
+===================================================================
+--- refpolicy-2.20220427.orig/config/appconfig-standard/seusers
++++ refpolicy-2.20220427/config/appconfig-standard/seusers
+@@ -1,2 +1,3 @@
+ root:root
+ __default__:user_u
++sddm:xdm:s0

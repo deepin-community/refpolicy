@@ -1,0 +1,25 @@
+#!/bin/sh
+
+set -eu
+
+tmpdir=$(mktemp -d)
+
+cd "${tmpdir}"
+
+cp /usr/share/selinux/mls/*.pp.bz2 .
+
+bzip2 -d *.pp.bz2
+
+mv base.pp base
+
+semodule_link -o test.lnk base *.pp
+semodule_expand test.lnk policy.bin
+
+mv base base.pp
+
+mkdir -p policy_root/var/lib/selinux/mls
+
+# igore 'FAIL stderr: libsemanage.add_user: user sddm not in password file'
+/usr/sbin/semodule --noreload --store mls --path policy_root --verbose --install *.pp 2>&1
+
+/sbin/setfiles -c policy_root/etc/selinux/mls/policy/policy.* policy_root/etc/selinux/mls/contexts/files/file_contexts

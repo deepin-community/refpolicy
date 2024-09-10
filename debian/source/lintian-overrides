@@ -1,0 +1,2 @@
+refpolicy source: very-long-line-length-in-source-file * > 512 [policy/mls:197]
+refpolicy source: very-long-line-length-in-source-file * > 512 [policy/support/obj_perm_sets.spt:37]

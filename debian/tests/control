@@ -1,0 +1,2 @@
+Tests: validate-default validate-mls
+Depends: @

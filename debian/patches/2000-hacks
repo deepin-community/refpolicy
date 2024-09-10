@@ -1,0 +1,143 @@
+Index: refpolicy-2.20240713/policy/modules/system/init.if
+===================================================================
+--- refpolicy-2.20240713.orig/policy/modules/system/init.if
++++ refpolicy-2.20240713/policy/modules/system/init.if
+@@ -178,7 +178,11 @@ interface(`init_domain',`
+ 
+ 	role system_r types $1;
+ 
+-	domtrans_pattern(init_t, $2, $1)
++	ifdef(`init_systemd', `
++		domtrans_pattern(init_t, $2, $1)
++		allow init_t $1:unix_stream_socket create_stream_socket_perms;
++		allow $1 init_t:unix_dgram_socket sendto;
++	')
+ 
+ 	allow init_t $1:process rlimitinh;
+ 
+Index: refpolicy-2.20240713/policy/modules/system/fstools.te
+===================================================================
+--- refpolicy-2.20240713.orig/policy/modules/system/fstools.te
++++ refpolicy-2.20240713/policy/modules/system/fstools.te
+@@ -170,6 +170,11 @@ init_dontaudit_getattr_initctl(fsadm_t)
+ init_read_state(fsadm_t)
+ init_rw_script_stream_sockets(fsadm_t)
+ 
++ifdef(`hide_broken_symptoms',`
++	# for /run/pm-utils/locks/pm-powersave.lock
++	init_read_utmp(fsadm_t)
++')
++
+ logging_send_syslog_msg(fsadm_t)
+ 
+ miscfiles_read_localization(fsadm_t)
+Index: refpolicy-2.20240713/policy/modules/system/sysnetwork.te
+===================================================================
+--- refpolicy-2.20240713.orig/policy/modules/system/sysnetwork.te
++++ refpolicy-2.20240713/policy/modules/system/sysnetwork.te
+@@ -365,6 +365,11 @@ files_dontaudit_read_root_files(ifconfig
+ init_use_fds(ifconfig_t)
+ init_use_script_ptys(ifconfig_t)
+ 
++ifdef(`hide_broken_symptoms',`
++	# for /run/pm-utils/locks/pm-powersave.lock
++	init_read_utmp(ifconfig_t)
++')
++
+ logging_send_syslog_msg(ifconfig_t)
+ 
+ miscfiles_read_localization(ifconfig_t)
+Index: refpolicy-2.20240713/config/appconfig-mcs/default_contexts
+===================================================================
+--- refpolicy-2.20240713.orig/config/appconfig-mcs/default_contexts
++++ refpolicy-2.20240713/config/appconfig-mcs/default_contexts
+@@ -2,7 +2,7 @@ system_r:crond_t:s0		user_r:user_t:s0 st
+ system_r:init_t:s0		user_r:user_systemd_t:s0 staff_r:staff_systemd_t:s0 sysadm_r:sysadm_systemd_t:s0 unconfined_r:unconfined_t:s0
+ system_r:local_login_t:s0	user_r:user_t:s0 staff_r:staff_t:s0 sysadm_r:sysadm_t:s0 unconfined_r:unconfined_t:s0
+ system_r:remote_login_t:s0	user_r:user_t:s0 staff_r:staff_t:s0 unconfined_r:unconfined_t:s0
+-system_r:sshd_t:s0		user_r:user_t:s0 staff_r:staff_t:s0 sysadm_r:sysadm_t:s0 unconfined_r:unconfined_t:s0
++system_r:sshd_t:s0		user_r:user_t:s0 sysadm_r:sysadm_t:s0 staff_r:staff_t:s0 unconfined_r:unconfined_t:s0
+ system_r:sulogin_t:s0		sysadm_r:sysadm_t:s0
+ system_r:xdm_t:s0		user_r:user_t:s0 staff_r:staff_t:s0 sysadm_r:sysadm_t:s0 unconfined_r:unconfined_t:s0
+ 
+Index: refpolicy-2.20240713/Makefile
+===================================================================
+--- refpolicy-2.20240713.orig/Makefile
++++ refpolicy-2.20240713/Makefile
+@@ -256,6 +256,7 @@ M4PARAM += -D mls_num_sens=$(MLS_SENS) -
+ # differently on different distros
+ ifeq ($(DISTRO),debian)
+ 	CTAGS := ctags-exuberant
++	M4PARAM += -D use_alsa
+ endif
+ 
+ ifeq ($(DISTRO),gentoo)
+Index: refpolicy-2.20240713/policy/modules/system/systemd.te
+===================================================================
+--- refpolicy-2.20240713.orig/policy/modules/system/systemd.te
++++ refpolicy-2.20240713/policy/modules/system/systemd.te
+@@ -2406,3 +2406,7 @@ optional_policy(`
+ optional_policy(`
+ 	userdom_delete_all_user_runtime_named_sockets(systemd_user_runtime_dir_t)
+ ')
++
++optional_policy(`
++	userdom_unlink_user_tmp_devices(systemd_user_runtime_dir_t)
++')
+Index: refpolicy-2.20240713/policy/modules/system/userdomain.if
+===================================================================
+--- refpolicy-2.20240713.orig/policy/modules/system/userdomain.if
++++ refpolicy-2.20240713/policy/modules/system/userdomain.if
+@@ -4872,6 +4872,25 @@ interface(`userdom_dontaudit_write_user_
+ 
+ ########################################
+ ## <summary>
++##      Delete user_tmp_t device nodes (probably should not have been
++##	created in the first place)
++## </summary>
++## <param name="domain">
++##      <summary>
++##      Domain to allow deleting
++##      </summary>
++## </param>
++#
++interface(`userdom_unlink_user_tmp_devices',`
++	gen_require(`
++		type user_tmp_t;
++	')
++
++	allow $1 user_tmp_t:{ chr_file blk_file } unlink;
++')
++
++########################################
++## <summary>
+ ##	Do not audit attempts to use user ttys.
+ ## </summary>
+ ## <param name="domain">
+Index: refpolicy-2.20240713/policy/modules/services/mta.if
+===================================================================
+--- refpolicy-2.20240713.orig/policy/modules/services/mta.if
++++ refpolicy-2.20240713/policy/modules/services/mta.if
+@@ -1237,3 +1237,22 @@ interface(`mta_rw_user_mail_stream_socke
+ 
+ 	allow $1 user_mail_domain:unix_stream_socket rw_socket_perms;
+ ')
++
++# hack for exim postinst in Debian
++#######################################
++## <summary>
++##	Allow system_mail_t to run in a role
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Role allowed access.
++##	</summary>
++## </param>
++#
++interface(`mta_system_mail_role',`
++	gen_require(`
++		type system_mail_t;
++	')
++
++	role $1 types system_mail_t;
++')
