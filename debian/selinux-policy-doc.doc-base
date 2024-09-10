@@ -1,0 +1,24 @@
+Document: selinux-policy-doc
+Title: SELinux Reference Policy
+Author: various
+Abstract: The SELinux Reference Policy (refpolicy) is a complete SELinux
+ policy, as an alternative to the existing strict and targeted
+ policies available from http://selinux.sf.net. The goal is to have
+ this policy as the system policy, be and used as the basis for
+ creating other policies. Refpolicy is based on the current strict and
+ targeted policies, but aims to accomplish many additional
+ goals:
+  + Strong Modularity
+  + Clearly stated security Goals
+  + Documentation
+  + Development Tool Support
+  + Forward Looking
+  + Configurability
+  + Flexible Base Policy
+  + Application Policy Variations
+  + Multi-Level Security
+Section: System/Administration
+
+Format: HTML
+Index: /usr/share/doc/selinux-policy-doc/html/index.html
+Files: /usr/share/doc/selinux-policy-doc/html/*.html

@@ -1,0 +1,135 @@
+Index: refpolicy-2.20240629/policy/modules/system/authlogin.if
+===================================================================
+--- refpolicy-2.20240629.orig/policy/modules/system/authlogin.if
++++ refpolicy-2.20240629/policy/modules/system/authlogin.if
+@@ -91,6 +91,7 @@ interface(`auth_use_pam_systemd',`
+ 	systemd_connect_machined($1)
+ 	systemd_dbus_chat_logind($1)
+ 	systemd_read_logind_state($1)
++	systemd_logind_use_fds($1)
+ 
+ 	# to read /etc/machine-id
+ 	files_read_etc_runtime_files($1)
+Index: refpolicy-2.20240629/policy/modules/services/xserver.te
+===================================================================
+--- refpolicy-2.20240629.orig/policy/modules/services/xserver.te
++++ refpolicy-2.20240629/policy/modules/services/xserver.te
+@@ -584,6 +584,8 @@ optional_policy(`
+ 	')
+ 
+ 	optional_policy(`
++		auth_use_pam_systemd(xdm_t)
++		systemd_dbus_chat_hostnamed(xdm_t)
+ 		systemd_read_logind_runtime_files(xdm_t)
+ 	')
+ ')
+Index: refpolicy-2.20240629/policy/modules/system/systemd.if
+===================================================================
+--- refpolicy-2.20240629.orig/policy/modules/system/systemd.if
++++ refpolicy-2.20240629/policy/modules/system/systemd.if
+@@ -1383,6 +1383,24 @@ interface(`systemd_use_logind_fds',`
+ 
+ ######################################
+ ## <summary>
++##   Allow systemd-logind to use fds received from dbus
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`systemd_logind_use_fds',`
++	gen_require(`
++		type systemd_logind_t;
++	')
++
++	allow systemd_logind_t $1:fd use;
++')
++
++######################################
++## <summary>
+ ##      Watch logind sessions dirs.
+ ## </summary>
+ ## <param name="domain">
+Index: refpolicy-2.20240629/policy/modules/kernel/filesystem.if
+===================================================================
+--- refpolicy-2.20240629.orig/policy/modules/kernel/filesystem.if
++++ refpolicy-2.20240629/policy/modules/kernel/filesystem.if
+@@ -1346,6 +1346,24 @@ interface(`fs_watch_memory_pressure',`
+ 
+ ########################################
+ ## <summary>
++##      Allow mounting a file ovr a memory.pressure file
++## </summary>
++## <param name="domain">
++##      <summary>
++##      Source domain
++##      </summary>
++## </param>
++#
++interface(`fs_mounton_memory_pressure',`
++	gen_require(`
++		type memory_pressure_t;
++	')
++
++	allow $1 memory_pressure_t:file mounton;
++')
++
++########################################
++## <summary>
+ ##	Do not audit attempts to read
+ ##	dirs on a CIFS or SMB filesystem.
+ ## </summary>
+Index: refpolicy-2.20240629/policy/modules/system/locallogin.te
+===================================================================
+--- refpolicy-2.20240629.orig/policy/modules/system/locallogin.te
++++ refpolicy-2.20240629/policy/modules/system/locallogin.te
+@@ -131,8 +131,9 @@ auth_domtrans_pam_console(local_login_t)
+ auth_read_pam_motd_dynamic(local_login_t)
+ auth_read_shadow_history(local_login_t)
+ 
+-# if local_login_t can not inherit fd from init it takes ages to login
++# if local_login_t can not inherit fd from init then login fails
+ init_use_fds(local_login_t)
++init_use_script_fds(local_login_t)
+ 
+ miscfiles_read_localization(local_login_t)
+ 
+@@ -148,7 +149,6 @@ ifdef(`init_systemd',`
+ 	auth_manage_faillog(local_login_t)
+ 
+ 	init_dbus_chat(local_login_t)
+-	init_use_fds(local_login_t)
+ 
+ 	systemd_connect_machined(local_login_t)
+ 	systemd_dbus_chat_logind(local_login_t)
+Index: refpolicy-2.20240629/policy/modules/system/userdomain.if
+===================================================================
+--- refpolicy-2.20240629.orig/policy/modules/system/userdomain.if
++++ refpolicy-2.20240629/policy/modules/system/userdomain.if
+@@ -4212,6 +4212,24 @@ interface(`userdom_dontaudit_setattr_use
+ 
+ ########################################
+ ## <summary>
++##	watch a user domain tty.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain to not audit.
++##	</summary>
++## </param>
++#
++interface(`userdom_watch_user_ttys',`
++	gen_require(`
++		type user_tty_device_t;
++	')
++
++	allow $1 user_tty_device_t:chr_file watch;
++')
++
++########################################
++## <summary>
+ ##	Read and write a user domain tty.
+ ## </summary>
+ ## <param name="domain">

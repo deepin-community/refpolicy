@@ -1,0 +1,13 @@
+Index: refpolicy-2.20231010/policy/modules/system/systemd.te
+===================================================================
+--- refpolicy-2.20231010.orig/policy/modules/system/systemd.te
++++ refpolicy-2.20231010/policy/modules/system/systemd.te
+@@ -1534,6 +1534,8 @@ allow systemd_resolved_t self:tcp_socket
+ 
+ allow systemd_resolved_t systemd_networkd_runtime_t:dir watch;
+ 
++allow systemd_resolved_t systemd_runtime_notify_t:sock_file write;
++
+ manage_dirs_pattern(systemd_resolved_t, systemd_resolved_runtime_t, systemd_resolved_runtime_t)
+ manage_files_pattern(systemd_resolved_t, systemd_resolved_runtime_t, systemd_resolved_runtime_t)
+ manage_lnk_files_pattern(systemd_resolved_t, systemd_resolved_runtime_t, systemd_resolved_runtime_t)

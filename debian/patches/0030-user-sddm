@@ -1,0 +1,459 @@
+Index: refpolicy-2.20240713/policy/modules/apps/wm.if
+===================================================================
+--- refpolicy-2.20240713.orig/policy/modules/apps/wm.if
++++ refpolicy-2.20240713/policy/modules/apps/wm.if
+@@ -58,12 +58,15 @@ template(`wm_role_template',`
+ 	allow $3 $1_wm_t:fd use;
+ 
+ 	allow $1_wm_t $3:unix_stream_socket { connectto read write getopt getattr accept };
+-	allow $3 $1_wm_t:unix_stream_socket { connectto read write getopt };
++	allow $3 $1_wm_t:unix_stream_socket { connectto read write getopt shutdown };
++	allow $3 $1_wm_t:fifo_file read_fifo_file_perms;
+ 
+ 	# ptrace here would allow messing with keyboard
+ 	allow $3 $1_wm_t:process { signal_perms };
+ 	ps_process_pattern($3, $1_wm_t)
+ 
++	kernel_read_kernel_sysctls($1_wm_t)
++
+ 	allow $1_wm_t $3:process { sigkill signull signal };
+ 	ps_process_pattern($1_wm_t, $3)
+ 
+@@ -72,6 +75,8 @@ template(`wm_role_template',`
+ 	corecmd_bin_domtrans($1_wm_t, $2)
+ 	corecmd_shell_domtrans($1_wm_t, $2)
+ 
++	domain_use_interactive_fds($1_wm_t)
++
+ 	mls_file_read_all_levels($1_wm_t)
+ 	mls_file_write_all_levels($1_wm_t)
+ 	mls_xwin_read_all_levels($1_wm_t)
+@@ -95,10 +100,16 @@ template(`wm_role_template',`
+ 
+ 	wm_write_pipes($1, $3)
+ 
++	tunable_policy(`wm_write_xdg_data', `
++		xdg_manage_data($1_wm_t)
++	')
++
+ 	optional_policy(`
+ 		dbus_connect_spec_session_bus($1, $1_wm_t)
++		dbus_read_lib_files($1_wm_t)
+ 		dbus_spec_session_bus_client($1, $1_wm_t)
+ 		dbus_system_bus_client($1_wm_t)
++		dbus_write_session_runtime_socket($1_wm_t)
+ 
+ 		optional_policy(`
+ 			wm_dbus_chat($1, $3)
+@@ -140,6 +151,17 @@ template(`wm_role_template',`
+ 	optional_policy(`
+ 		xdg_watch_config_files($1_wm_t)
+ 	')
++
++	optional_policy(`
++		systemd_dbus_chat_logind($1_wm_t)
++	')
++
++	optional_policy(`
++		xdg_read_data_files($1_wm_t)
++		xdg_manage_cache($1_wm_t)
++		xdg_manage_config($1_wm_t)
++		xdg_watch_data_files($1_wm_t)
++	')
+ ')
+ 
+ ########################################
+Index: refpolicy-2.20240713/policy/modules/kernel/corecommands.fc
+===================================================================
+--- refpolicy-2.20240713.orig/policy/modules/kernel/corecommands.fc
++++ refpolicy-2.20240713/policy/modules/kernel/corecommands.fc
+@@ -265,6 +265,7 @@ ifdef(`distro_gentoo',`
+ /usr/lib/xfce4/session/xfsm-shutdown-helper -- gen_context(system_u:object_r:bin_t,s0)
+ /usr/lib/xfce4/xfconf/xfconfd	--	gen_context(system_u:object_r:bin_t,s0)
+ /usr/lib/xfce4/xfwm4/helper-dialog --	gen_context(system_u:object_r:bin_t,s0)
++/usr/lib/[^/]+-linux-gnu/libexec/.* -- gen_context(system_u:object_r:bin_t,s0)
+ 
+ ifdef(`distro_debian',`
+ /usr/lib/[^/]+/tumbler-1/tumblerd --	gen_context(system_u:object_r:bin_t,s0)
+Index: refpolicy-2.20240713/policy/modules/system/unconfined.if
+===================================================================
+--- refpolicy-2.20240713.orig/policy/modules/system/unconfined.if
++++ refpolicy-2.20240713/policy/modules/system/unconfined.if
+@@ -39,6 +39,7 @@ interface(`unconfined_domain_noaudit',`
+ 	allow $1 self:{ capability cap_userns } { audit_control audit_write chown dac_override dac_read_search fowner fsetid ipc_lock ipc_owner kill lease linux_immutable mknod net_admin net_bind_service net_broadcast net_raw setfcap setgid setpcap setuid sys_admin sys_boot sys_chroot sys_nice sys_pacct sys_ptrace sys_rawio sys_resource sys_time sys_tty_config };
+ 	allow $1 self:{ capability2 cap2_userns } { bpf perfmon syslog wake_alarm checkpoint_restore };
+ 	allow $1 self:fifo_file manage_fifo_file_perms;
++	allow $1 self:system status;
+ 
+ 	# Manage most namespace capabilities
+ 	allow $1 self:user_namespace create;
+@@ -55,6 +56,12 @@ interface(`unconfined_domain_noaudit',`
+ 
+ 	# used by Chrome for some reason
+ 	allow $1 self:dir manage_dir_perms;
++
++	# for io_uring
++	allow $1 self:anon_inode { create map read write };
++
++	# used by Chrome for some reason
++	allow $1 self:dir manage_dir_perms;
+ 
+ 	# for io_uring
+ 	allow $1 self:anon_inode { create map read write };
+Index: refpolicy-2.20240713/policy/modules/apps/gnome.if
+===================================================================
+--- refpolicy-2.20240713.orig/policy/modules/apps/gnome.if
++++ refpolicy-2.20240713/policy/modules/apps/gnome.if
+@@ -114,6 +114,10 @@ template(`gnome_role_template',`
+ 		')
+ 
+ 		optional_policy(`
++			systemd_dbus_chat_logind($1_gkeyringd_t)
++		')
++
++		optional_policy(`
+ 			wm_dbus_chat($1, $1_gkeyringd_t)
+ 		')
+ 	')
+@@ -816,3 +820,21 @@ interface(`gnome_mmap_gstreamer_orcexec'
+ 
+ 	allow $1 gstreamer_orcexec_t:file mmap_exec_file_perms;
+ ')
++
++########################################
++## <summary>
++##	watch gnome_xdg_config_t dirs
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`gnome_watch_xdg_config_dirs',`
++	gen_require(`
++		type gnome_xdg_config_t;
++	')
++
++	allow $1 gnome_xdg_config_t:dir watch;
++')
+Index: refpolicy-2.20240713/policy/modules/services/xserver.if
+===================================================================
+--- refpolicy-2.20240713.orig/policy/modules/services/xserver.if
++++ refpolicy-2.20240713/policy/modules/services/xserver.if
+@@ -224,7 +224,7 @@ template(`xserver_role',`
+ 
+ 	xserver_read_xkb_libs($2)
+ 
+-	allow $2 xdm_t:unix_stream_socket accept;
++	allow $2 xdm_t:unix_stream_socket { getattr accept };
+ 
+ 	optional_policy(`
+ 		systemd_user_app_status($1, xserver_t)
+Index: refpolicy-2.20240713/policy/modules/system/miscfiles.if
+===================================================================
+--- refpolicy-2.20240713.orig/policy/modules/system/miscfiles.if
++++ refpolicy-2.20240713/policy/modules/system/miscfiles.if
+@@ -653,6 +653,7 @@ interface(`miscfiles_watch_localization'
+ 		type locale_t;
+ 	')
+ 
++	allow $1 locale_t:dir watch;
+ 	allow $1 locale_t:file watch;
+ ')
+ 
+Index: refpolicy-2.20240713/policy/modules/system/userdomain.if
+===================================================================
+--- refpolicy-2.20240713.orig/policy/modules/system/userdomain.if
++++ refpolicy-2.20240713/policy/modules/system/userdomain.if
+@@ -122,6 +122,8 @@ template(`userdom_base_user_template',`
+ 	miscfiles_read_generic_certs($1_t)
+ 	miscfiles_watch_fonts_dirs($1_t)
+ 
++	userdom_write_user_runtime_sockets($1_t)
++
+ 	sysnet_read_config($1_t)
+ 
+ 	# kdeinit wants systemd status
+@@ -975,6 +977,7 @@ template(`userdom_login_user_template',
+ 	userdom_exec_user_tmp_files($1_t)
+ 	userdom_exec_user_home_content_files($1_t)
+ 
++	userdom_execmod_user_tmpfs_files($1_t)
+ 	userdom_map_user_tmpfs_files($1_t)
+ 
+ 	userdom_change_password_template($1)
+@@ -1235,8 +1238,10 @@ template(`userdom_unpriv_user_template',
+ 	corenet_tcp_bind_xserver_port($1_t)
+ 
+ 	files_exec_usr_files($1_t)
++	files_watch_etc_symlinks($1_t)
+ 
+ 	miscfiles_manage_public_files($1_t)
++	miscfiles_watch_localization($1_t)
+ 	miscfiles_watch_public_dirs($1_t)
+ 
+ 	tunable_policy(`user_dmesg',`
+@@ -1255,6 +1260,7 @@ template(`userdom_unpriv_user_template',
+ 	tunable_policy(`user_tcp_server',`
+ 		corenet_tcp_bind_generic_node($1_t)
+ 		corenet_tcp_bind_generic_port($1_t)
++		corenet_tcp_bind_all_unreserved_ports($1_t)
+ 	')
+ 
+ 	# Allow users to run UDP servers (bind to ports and accept connection from
+@@ -1262,6 +1268,7 @@ template(`userdom_unpriv_user_template',
+ 	tunable_policy(`user_udp_server',`
+ 		corenet_udp_bind_generic_node($1_t)
+ 		corenet_udp_bind_generic_port($1_t)
++		corenet_udp_bind_all_unreserved_ports($1_t)
+ 	')
+ 
+ 	optional_policy(`
+@@ -1606,6 +1613,8 @@ template(`userdom_xdg_user_template',`
+ 	xdg_manage_all_data($1_t)
+ 	xdg_relabel_all_data($1_t)
+ 	xdg_watch_all_data_dirs($1_t)
++	xdg_watch_all_data_files($1_t)
++	xdg_exec_data($1_t)
+ 
+ 	xdg_generic_user_home_dir_filetrans_cache($1_t, dir, ".cache")
+ 	xdg_generic_user_home_dir_filetrans_config($1_t, dir, ".config")
+@@ -3766,6 +3775,24 @@ interface(`userdom_delete_user_runtime_f
+ 
+ ########################################
+ ## <summary>
++##	write user runtime sockets
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`userdom_write_user_runtime_sockets',`
++	gen_require(`
++		type user_runtime_t;
++	')
++
++	allow $1 user_runtime_t:sock_file write;
++')
++
++########################################
++## <summary>
+ ##	Search users runtime directories.
+ ## </summary>
+ ## <param name="domain">
+@@ -4147,6 +4174,24 @@ interface(`userdom_manage_user_tmpfs_fil
+ ')
+ 
+ ########################################
++## <summary>
++##	execute and execmod user tmpfs files
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`userdom_execmod_user_tmpfs_files',`
++	gen_require(`
++		type user_tmpfs_t;
++	')
++
++	allow $1 user_tmpfs_t:file { execute execmod };
++')
++
++########################################
+ ## <summary>
+ ##	Get the attributes of a user domain tty.
+ ## </summary>
+Index: refpolicy-2.20240713/policy/modules/apps/pulseaudio.te
+===================================================================
+--- refpolicy-2.20240713.orig/policy/modules/apps/pulseaudio.te
++++ refpolicy-2.20240713/policy/modules/apps/pulseaudio.te
+@@ -135,6 +135,8 @@ dev_rw_dri(pulseaudio_t)
+ dev_read_video_dev(pulseaudio_t)
+ dev_write_video_dev(pulseaudio_t)
+ 
++files_read_etc_runtime_files(pulseaudio_t)
++
+ files_read_usr_files(pulseaudio_t)
+ files_map_usr_files(pulseaudio_t)
+ 
+@@ -254,6 +256,7 @@ optional_policy(`
+ 	systemd_read_logind_sessions_files(pulseaudio_t)
+ 	# for /run/systemd/users/$PID
+ 	systemd_read_logind_runtime_files(pulseaudio_t)
++	systemd_watch_logind_sessions_dirs(pulseaudio_t)
+ ')
+ 
+ optional_policy(`
+Index: refpolicy-2.20240713/policy/modules/system/xdg.if
+===================================================================
+--- refpolicy-2.20240713.orig/policy/modules/system/xdg.if
++++ refpolicy-2.20240713/policy/modules/system/xdg.if
+@@ -729,6 +729,24 @@ interface(`xdg_watch_data_dirs',`
+ 
+ ########################################
+ ## <summary>
++##	Watch the xdg data home files
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`xdg_watch_data_files',`
++	gen_require(`
++		type xdg_data_t;
++	')
++
++	allow $1 xdg_data_t:file watch;
++')
++
++########################################
++## <summary>
+ ##	Watch all the xdg data home directories
+ ## </summary>
+ ## <param name="domain">
+@@ -747,6 +765,24 @@ interface(`xdg_watch_all_data_dirs',`
+ 
+ ########################################
+ ## <summary>
++##	Watch all the xdg data home files
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`xdg_watch_all_data_files',`
++	gen_require(`
++		attribute xdg_data_type;
++	')
++
++	allow $1 xdg_data_type:file watch;
++')
++
++########################################
++## <summary>
+ ##	Read the xdg data home files
+ ## </summary>
+ ## <param name="domain">
+@@ -952,6 +988,24 @@ interface(`xdg_relabel_data',`
+ ')
+ 
+ ########################################
++## <summary>
++##	Allow domain to execute xdg_data_t, for some application config in kde
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`xdg_exec_data',`
++	gen_require(`
++		type xdg_data_t;
++	')
++
++	can_exec($1, xdg_data_t)
++')
++
++########################################
+ ## <summary>
+ ##	Allow relabeling the xdg data home files, regardless of their type
+ ## </summary>
+Index: refpolicy-2.20240713/policy/modules/apps/wm.te
+===================================================================
+--- refpolicy-2.20240713.orig/policy/modules/apps/wm.te
++++ refpolicy-2.20240713/policy/modules/apps/wm.te
+@@ -7,6 +7,14 @@ policy_module(wm)
+ 
+ attribute wm_domain;
+ 
++
++## <desc>
++##      <p>
++##      Grant the window manager domains write access to xdg data
++##      </p>
++## </desc>
++gen_tunable(`wm_write_xdg_data', false)
++
+ type wm_exec_t;
+ corecmd_executable_file(wm_exec_t)
+ 
+Index: refpolicy-2.20240713/policy/modules/apps/chromium.te
+===================================================================
+--- refpolicy-2.20240713.orig/policy/modules/apps/chromium.te
++++ refpolicy-2.20240713/policy/modules/apps/chromium.te
+@@ -283,6 +283,7 @@ optional_policy(`
+ 
+ 	optional_policy(`
+ 		gnome_dbus_chat_all_gkeyringd(chromium_t)
++		gnome_watch_xdg_config_dirs(chromium_t)
+ 	')
+ 
+ 	optional_policy(`
+Index: refpolicy-2.20240713/policy/modules/services/xserver.fc
+===================================================================
+--- refpolicy-2.20240713.orig/policy/modules/services/xserver.fc
++++ refpolicy-2.20240713/policy/modules/services/xserver.fc
+@@ -37,6 +37,7 @@ HOME_DIR/\.Xauthority.*	--	gen_context(s
+ /etc/kde[34]?/kdm/backgroundrc	gen_context(system_u:object_r:xdm_var_run_t,s0)
+ 
+ /etc/rc\.d/init\.d/x11-common -- gen_context(system_u:object_r:xdm_exec_t,s0)
++/etc/sddm/wayland-session --	gen_context(system_u:object_r:xsession_exec_t,s0)
+ /etc/sddm/Xsession	--	gen_context(system_u:object_r:xsession_exec_t,s0)
+ 
+ /etc/X11/[wx]dm/Xreset.* --	gen_context(system_u:object_r:xsession_exec_t,s0)
+@@ -87,6 +88,8 @@ HOME_DIR/\.Xauthority.*	--	gen_context(s
+ /usr/lib/xorg-server/Xorg	--	gen_context(system_u:object_r:xserver_exec_t,s0)
+ /usr/lib/xorg-server/Xorg\.wrap	--	gen_context(system_u:object_r:xserver_exec_t,s0)
+ /usr/lib/X11/xdm/Xsession	--	gen_context(system_u:object_r:xsession_exec_t,s0)
++/usr/lib/[^/]*/sddm/sddm-helper-start-wayland -- gen_context(system_u:object_r:xsession_exec_t,s0)
++/usr/lib/[^/]*/sddm/sddm-helper-start-x11user -- gen_context(system_u:object_r:xsession_exec_t,s0)
+ 
+ /usr/sbin/[xkw]dm	--	gen_context(system_u:object_r:xdm_exec_t,s0)
+ /usr/sbin/gdm(3)?	--	gen_context(system_u:object_r:xdm_exec_t,s0)
+Index: refpolicy-2.20240713/config/appconfig-mcs/xdm_default_contexts
+===================================================================
+--- refpolicy-2.20240713.orig/config/appconfig-mcs/xdm_default_contexts
++++ refpolicy-2.20240713/config/appconfig-mcs/xdm_default_contexts
+@@ -1 +1,2 @@
+-system_r:xdm_t:s0		system_r:xdm_t:s0
++system_r:xdm_t:s0		xdm_r:xdm_t:s0
++system_r:init_t:s0		xdm_r:xdm_t:s0
+Index: refpolicy-2.20240713/config/appconfig-mls/xdm_default_contexts
+===================================================================
+--- refpolicy-2.20240713.orig/config/appconfig-mls/xdm_default_contexts
++++ refpolicy-2.20240713/config/appconfig-mls/xdm_default_contexts
+@@ -1 +1,2 @@
+-system_r:xdm_t:s0		system_r:xdm_t:s0
++system_r:xdm_t:s0		xdm_r:xdm_t:s0
++system_r:init_t:s0		xdm_r:xdm_t:s0
+Index: refpolicy-2.20240713/config/appconfig-standard/xdm_default_contexts
+===================================================================
+--- refpolicy-2.20240713.orig/config/appconfig-standard/xdm_default_contexts
++++ refpolicy-2.20240713/config/appconfig-standard/xdm_default_contexts
+@@ -1 +1 @@
+-system_r:xdm_t		system_r:xdm_t
++system_r:xdm_t		xdm_r:xdm_t
+Index: refpolicy-2.20240713/policy/modules/services/xserver.te
+===================================================================
+--- refpolicy-2.20240713.orig/policy/modules/services/xserver.te
++++ refpolicy-2.20240713/policy/modules/services/xserver.te
+@@ -173,7 +173,7 @@ fs_associate_tmpfs(xconsole_device_t)
+ files_associate_tmp(xconsole_device_t)
+ 
+ type xdm_t;
+-role xdm_r types xdm_t;
++role xdm_r types { xdm_t xserver_t };
+ type xdm_exec_t;
+ auth_login_pgm_domain(xdm_t)
+ init_domain(xdm_t, xdm_exec_t)

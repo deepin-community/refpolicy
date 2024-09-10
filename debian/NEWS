@@ -1,0 +1,87 @@
+refpolicy (2:2.20140421-10) unstable; urgency=medium
+
+  Starting with this version, the policy packages support the new libsemanage
+  2.4 policy store. The modules shipped by these packages are automatically
+  installed with the priority 100. The system administrator can override any
+  of these modules by installing them using an higher priority (ie. 400).
+
+  During the update from a previous version, the existing module store is not
+  automatically migrated to the new format. All the existing modules and
+  configuration files are left untouched on the file system
+  (/etc/selinux/{default,mls}/modules/active/store). Any customisation should
+  be migrated manually.
+
+ -- Laurent Bigonville <bigon@debian.org>  Mon, 16 May 2016 09:49:00 +0200
+
+refpolicy (2:2.20140206-1) unstable; urgency=medium
+
+  The selinux-policy-dev package is now installing the headers and Makefile
+  under /usr/share/selinux/devel instead of /usr/share/selinux/{default,mls}.
+  If you are bulding custom modules, be sure you are pointing to this new
+  location.
+
+ -- Laurent Bigonville <bigon@debian.org>  Tue, 24 Dec 2013 15:58:51 +0100
+
+refpolicy (2:2.20131214-1) unstable; urgency=low
+
+  Starting with this version, the modules will be automatically updated with
+  each package upgrade. Modules that have previously been removed (semodule -r)
+  will now be re-installed on upgrade, if you want to permanantly prevent a
+  module from being loaded you must disable it with the "semodule -d" command.
+
+  Also a lot of modules have been changed in the release, to ensure all the
+  files are properly labeled on disk, you should force a full relabel by
+  running the following command: "touch /.autorelabel" and then rebooting.
+
+ -- Laurent Bigonville <bigon@debian.org>  Sun, 15 Dec 2013 22:54:02 +0100
+
+refpolicy (2:0.2.20100524-6) unstable; urgency=low
+
+  http://etbe.coker.com.au/2010/04/21/upgrading-se-linux-system-squeez/
+
+  * I've documented the process of upgrading a SE Linux system to Lenny at
+    the above URL.  But I'll summarise it here.
+
+  deb http://www.coker.com.au lenny selinux
+
+  * To run a Squeeze kernel with Lenny policy you need to use the latest Lenny
+    SE Linux policy from the above APT repository, install that and run
+    "selinux-policy-upgrade" to apply it before booting the Lenny kernel.
+
+  * If you run a Lenny kernel with Squeeze policy then you will get a large
+    number of annoying kernel messages due to a minor kernel bug.  The
+    command “dmesg -n 1” will prevent such messages from going to the system
+    console, this is necessary for a usable console login.
+
+  * To upgrade a system to the Squeeze policy you should run the following
+    commands.  They must be run in single-user mode if SE Linux is a critical
+    part of the system's security model but may be run from multi-user mode
+    if your use of SE Linux is just to catch any attacks that get past Unix
+    security.
+
+    setenforce 0 ; selinux-policy-upgrade ; touch /.autorelabel ; reboot
+
+ -- Russell Coker <russell@coker.com.au>  Thu, 13 Jan 2011 11:38:32 +1100
+
+refpolicy (2:0.0.20090621-1) unstable; urgency=low
+
+  * There have been some major updates in the file contexts in this
+    release, so a relabelling of the file system is recommended after this
+    upgrade. Please install selinux-basics, touch /.autorelabel as root,
+    and reboot.
+
+ -- Manoj Srivastava <srivasta@debian.org>  Mon, 22 Jun 2009 02:42:42 -0500
+
+refpolicy (0.0.20061018-2) unstable; urgency=high
+
+
+  * When installing strict policy, the postinst does not check for the
+    contents of /etc/selinux/config to see if SELINUXTYPE is set to
+    refpolicy-strict or not.  Ideally, if config does not have SELINUXTYPE
+    set to refpolicy-strict, the installer should be prompted to see if
+    they want to change the policy type and relabel; this is not yet
+    done.  Please ensure that the setting for  SELINUXTYPE in the
+    configuration file /etc/selinux/config matches what you want it to
+    be. 
+
+ -- Manoj Srivastava <srivasta@debian.org>  Fri, 22 Dec 2006 10:40:38 -0600

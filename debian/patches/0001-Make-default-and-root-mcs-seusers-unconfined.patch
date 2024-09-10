@@ -1,0 +1,31 @@
+From: =?UTF-8?q?Mika=20Pfl=C3=BCger?= <debian@mikapflueger.de>
+Date: Sat, 18 Feb 2012 01:48:07 +0100
+Subject: Make default and root mcs/seusers unconfined
+
+---
+ config/appconfig-mcs/seusers |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+Index: refpolicy-2.20230710/config/appconfig-mcs/seusers
+===================================================================
+--- refpolicy-2.20230710.orig/config/appconfig-mcs/seusers
++++ refpolicy-2.20230710/config/appconfig-mcs/seusers
+@@ -1,3 +1,3 @@
+-root:root:s0-mcs_systemhigh
+-__default__:user_u:s0
++root:unconfined_u:s0-mcs_systemhigh
++__default__:unconfined_u:s0-mcs_systemhigh
+ sddm:xdm:s0
+Index: refpolicy-2.20230710/policy/constraints
+===================================================================
+--- refpolicy-2.20230710.orig/policy/constraints
++++ refpolicy-2.20230710/policy/constraints
+@@ -29,6 +29,8 @@ define(`basic_ubac_conditions',`
+ 	ifdef(`enable_ubac',`
+ 		u1 == u2
+ 		or u1 == system_u
++		or u1 == unconfined_u
++		or u1 == sysadm_u
+ 		or u2 == system_u
+ 		or t1 != ubac_constrained_type
+ 		or t2 != ubac_constrained_type

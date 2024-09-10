@@ -1,0 +1,5 @@
+rm_conffile /etc/selinux/default/users/local.users 2:2.20140421-10~
+rm_conffile /etc/selinux/default/users/system.users 2:2.20140421-10~
+rm_conffile /etc/selinux/default/modules/semanage.read.LOCK 2:2.20140421-10~
+rm_conffile /etc/selinux/default/modules/semanage.trans.LOCK 2:2.20140421-10~
+rm_conffile /etc/selinux/default/modules/active/file_contexts.local 2:2.20140421-10~

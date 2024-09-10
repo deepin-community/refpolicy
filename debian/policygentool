@@ -1,0 +1,300 @@
+#! /usr/bin/env python3
+# Copyright (C) 2006 Red Hat 
+# see file 'COPYING' for use and warranty information
+#
+# policygentool is a tool for the initial generation of SELinux policy
+#
+#    This program is free software; you can redistribute it and/or
+#    modify it under the terms of the GNU General Public License as
+#    published by the Free Software Foundation; either version 2 of
+#    the License, or (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program; if not, write to the Free Software
+#    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA     
+#                                        02111-1307  USA
+#
+# arch-tag: 4c33ae23-a363-4ace-bae9-86fb8a792206 
+import os, sys, getopt
+import re
+
+########################### Interface File #############################
+interface="""\
+## <summary>policy for TEMPLATETYPE</summary>
+
+########################################
+## <summary>
+##	Execute a domain transition to run TEMPLATETYPE.
+## </summary>
+## <param name=\"domain\">
+## <summary>
+##	Domain allowed to transition.
+## </summary>
+## </param>
+#
+interface(`TEMPLATETYPE_domtrans',`
+	gen_require(`
+		type TEMPLATETYPE_t, TEMPLATETYPE_exec_t;
+	')
+
+	domain_auto_transition_pattern($1,TEMPLATETYPE_exec_t,TEMPLATETYPE_t)
+
+	allow $1 TEMPLATETYPE_t:fd use;
+	allow TEMPLATETYPE_t $1:fd use;
+	allow TEMPLATETYPE_t $1:fifo_file rw_file_perms;
+	allow TEMPLATETYPE_t $1:process sigchld;
+')
+"""
+
+########################### Type Enforcement File #############################
+te="""\
+policy_module(TEMPLATETYPE,1.0.0)
+
+########################################
+#
+# Declarations
+#
+
+type TEMPLATETYPE_t;
+type TEMPLATETYPE_exec_t;
+domain_type(TEMPLATETYPE_t)
+init_daemon_domain(TEMPLATETYPE_t, TEMPLATETYPE_exec_t)
+"""
+te_pidfile="""
+# pid files
+type TEMPLATETYPE_var_run_t;
+files_pid_file(TEMPLATETYPE_var_run_t)
+"""
+te_logfile="""
+# log files
+type TEMPLATETYPE_var_log_t;
+logging_log_file(TEMPLATETYPE_var_log_t)
+"""
+te_libfile="""
+# var/lib files
+type TEMPLATETYPE_var_lib_t;
+files_type(TEMPLATETYPE_var_lib_t)
+"""
+te_sep="""
+########################################
+#
+# TEMPLATETYPE local policy
+#
+# Check in /etc/selinux/refpolicy/include for macros to use instead of allow rules.
+
+# Some common macros (you might be able to remove some)
+files_read_etc_files(TEMPLATETYPE_t)
+libs_use_ld_so(TEMPLATETYPE_t)
+libs_use_shared_libs(TEMPLATETYPE_t)
+miscfiles_read_localization(TEMPLATETYPE_t)
+## internal communication is often done using fifo and unix sockets.
+allow TEMPLATETYPE_t self:fifo_file { read write };
+allow TEMPLATETYPE_t self:unix_stream_socket create_stream_socket_perms;
+"""
+te_pidfile2="""
+# pid file
+allow TEMPLATETYPE_t TEMPLATETYPE_var_run_t:file manage_file_perms;
+allow TEMPLATETYPE_t TEMPLATETYPE_var_run_t:sock_file manage_file_perms;
+allow TEMPLATETYPE_t TEMPLATETYPE_var_run_t:dir rw_dir_perms;
+files_pid_filetrans(TEMPLATETYPE_t,TEMPLATETYPE_var_run_t, { file sock_file })
+"""
+te_logfile2="""
+# log files
+allow TEMPLATETYPE_t TEMPLATETYPE_var_log_t:file create_file_perms;
+allow TEMPLATETYPE_t TEMPLATETYPE_var_log_t:sock_file create_file_perms;
+allow TEMPLATETYPE_t TEMPLATETYPE_var_log_t:dir { rw_dir_perms setattr };
+logging_log_filetrans(TEMPLATETYPE_t,TEMPLATETYPE_var_log_t,{ sock_file file dir })
+"""
+te_libfile2="""
+# var/lib files for TEMPLATETYPE
+allow TEMPLATETYPE_t TEMPLATETYPE_var_lib_t:file create_file_perms;
+allow TEMPLATETYPE_t TEMPLATETYPE_var_lib_t:sock_file create_file_perms;
+allow TEMPLATETYPE_t TEMPLATETYPE_var_lib_t:dir create_dir_perms;
+files_var_lib_filetrans(TEMPLATETYPE_t,TEMPLATETYPE_var_lib_t, { file dir sock_file })
+"""
+te_network2="""
+## Networking basics (adjust to your needs!)
+sysnet_dns_name_resolve(TEMPLATETYPE_t)
+corenet_tcp_sendrecv_all_if(TEMPLATETYPE_t)
+corenet_tcp_sendrecv_all_nodes(TEMPLATETYPE_t)
+corenet_tcp_sendrecv_all_ports(TEMPLATETYPE_t)
+corenet_non_ipsec_sendrecv(TEMPLATETYPE_t)
+corenet_tcp_connect_http_port(TEMPLATETYPE_t)
+#corenet_tcp_connect_all_ports(TEMPLATETYPE_t)
+## if it is a network daemon, consider these:
+#corenet_tcp_bind_all_ports(TEMPLATETYPE_t)
+#corenet_tcp_bind_all_nodes(TEMPLATETYPE_t)
+allow TEMPLATETYPE_t self:tcp_socket { listen accept };
+"""
+te_initsc2="""
+# Init script handling
+init_use_fds(TEMPLATETYPE_t)
+init_use_script_ptys(TEMPLATETYPE_t)
+domain_use_interactive_fds(TEMPLATETYPE_t)
+"""
+
+########################### File Context ##################################
+fc="""\
+# TEMPLATETYPE executable will have:
+# label: system_u:object_r:TEMPLATETYPE_exec_t
+# MLS sensitivity: s0
+# MCS categories: <none>
+
+EXECUTABLE		--	gen_context(system_u:object_r:TEMPLATETYPE_exec_t,s0)
+"""
+fc_pidfile="""\
+FILENAME			gen_context(system_u:object_r:TEMPLATETYPE_var_run_t,s0)
+"""
+fc_logfile="""\
+FILENAME			gen_context(system_u:object_r:TEMPLATETYPE_var_log_t,s0)
+"""
+fc_libfile="""\
+FILENAME			gen_context(system_u:object_r:TEMPLATETYPE_var_lib_t,s0)
+"""
+def errorExit(error):
+	sys.stderr.write("%s: " % sys.argv[0])
+	sys.stderr.write("%s\n" % error)
+	sys.stderr.flush()
+	sys.exit(1)
+
+
+def write_te_file(module, pidfile, logfile, libfile, network, initsc):
+	file="%s.te" % module
+	newte=re.sub("TEMPLATETYPE", module, te)
+	if pidfile:
+		newte= newte + re.sub("TEMPLATETYPE", module, te_pidfile)
+	if logfile:
+		newte= newte + re.sub("TEMPLATETYPE", module, te_logfile)
+	if libfile:
+		newte= newte + re.sub("TEMPLATETYPE", module, te_libfile)
+	newte= newte + re.sub("TEMPLATETYPE", module, te_sep)
+	if pidfile:
+		newte= newte + re.sub("TEMPLATETYPE", module, te_pidfile2)
+	if logfile:
+		newte= newte + re.sub("TEMPLATETYPE", module, te_logfile2)
+	if libfile:
+		newte= newte + re.sub("TEMPLATETYPE", module, te_libfile2)
+	if network:
+		newte= newte + re.sub("TEMPLATETYPE", module, te_network2)
+	if initsc:
+		newte= newte + re.sub("TEMPLATETYPE", module, te_initsc2)
+	if os.path.exists(file):
+		errorExit("%s already exists" % file)
+	fd = open(file, 'w')
+	fd.write(newte)
+	fd.close()
+
+def write_if_file(module):
+	file="%s.if" % module
+	newif=re.sub("TEMPLATETYPE", module, interface)
+	if os.path.exists(file):
+		errorExit("%s already exists" % file)
+	fd = open(file, 'w')
+	fd.write(newif)
+	fd.close()
+
+def write_fc_file(module, executable, pidfile, logfile, libfile):
+	file="%s.fc" % module
+	temp=re.sub("TEMPLATETYPE", module, fc)
+	newfc=re.sub("EXECUTABLE", executable, temp)
+	if pidfile:
+		temp=re.sub("TEMPLATETYPE", module, fc_pidfile)
+		newfc=newfc + re.sub("FILENAME", pidfile, temp)
+	if logfile:
+		temp=re.sub("TEMPLATETYPE", module, fc_logfile)
+		newfc=newfc + re.sub("FILENAME", logfile, temp)
+	if libfile:
+		temp=re.sub("TEMPLATETYPE", module, fc_libfile)
+		newfc=newfc + re.sub("FILENAME", libfile, temp)
+	if os.path.exists(file):
+		errorExit("%s already exists" % file)
+	fd = open(file, 'w')
+	fd.write(newfc)
+	fd.close()
+
+def gen_policy(module, executable, pidfile, logfile, libfile, initsc, network):
+	write_te_file(module, pidfile, logfile, libfile, initsc, network)
+	write_if_file(module)
+	write_fc_file(module, executable, pidfile, logfile, libfile)
+	
+if __name__ == '__main__':
+	def usage(message = ""):
+		print('%s ModuleName Executable' % sys.argv[0])
+		sys.exit(1)
+		
+	if len(sys.argv) != 3:
+		usage()
+
+	print("""\n
+This tool generate three files for policy development, A Type Enforcement (te)
+file, a File Context (fc), and a Interface File(if).  Most of the policy rules
+will be written in the te file.  Use the File Context file to associate file
+paths with security context.  Use the interface rules to allow other protected
+domains to interact with the newly defined domains.
+
+After generating these files use the /usr/share/selinux/POLICY-NAME/include/Makefile to
+compile your policy package.  Then use the semodule tool to load it.
+
+# /usr/bin/policygentool myapp /usr/bin/myapp
+# echo 'HEADERDIR:=/usr/share/selinux/refpolicy-targeted/include' >Makefile
+# echo 'include $(HEADERDIR)/Makefile' >> Makefile
+# make
+# semodule -l myapp.pp
+# restorecon -R -v /usr/bin/myapp "all files defined in myapp.fc"
+
+Now you can turn on permissive mode, start your application and avc messages
+will be generated.  You can use audit2allow to help translate the avc messages
+into policy.
+
+# setenforce 0
+# /etc/init.d/myapp start
+# audit2allow -R -i /var/log/audit/audit.log
+
+Return to continue:""")
+	sys.stdin.readline().rstrip()
+
+	print('If the module uses pidfiles, what is the pidfile called?')
+	pidfile = sys.stdin.readline().rstrip()
+	if pidfile == "":
+		pidfile = None
+	print('If the module uses logfiles, where are they stored?')
+	logfile = sys.stdin.readline().rstrip()
+	if logfile == "":
+		logfile = None
+	print('If the module has var/lib files, where are they stored?')
+	libfile = sys.stdin.readline().rstrip()
+	if libfile == "":
+		libfile = None
+	print('Does the module have a init script? [yN]')
+	initsc = sys.stdin.readline().rstrip()
+	if initsc == "" or initsc == "n" or initsc == "N":
+		initsc = False
+	elif initsc == "y" or initsc == "Y":
+		initsc = True
+	else:
+		raise ValueError("Please answer with 'y' or 'n'!")
+	print('Does the module use the network? [yN]')
+	network = sys.stdin.readline().rstrip()
+	if network == "" or network == "n" or network == "N":
+		network = False
+	elif network == "y" or network == "Y":
+		network = True
+	else:
+		raise ValueError("Please answer with 'y' or 'n'!")
+
+	gen_policy(
+		module=sys.argv[1],
+		executable=sys.argv[2],
+		pidfile=pidfile,
+		logfile=logfile,
+		libfile=libfile,
+		initsc=initsc,
+		network=network
+	)
+
+	

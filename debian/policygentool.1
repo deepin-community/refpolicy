@@ -1,0 +1,100 @@
+.\"                             -*- Mode: Nroff -*- 
+.\" policygentool.1 --- 
+.\" Author           : Manoj Srivastava ( srivasta@glaurung.internal.golden-gryphon.com ) 
+.\" Created On       : Mon Feb 26 20:57:11 2007
+.\" Created On Node  : glaurung.internal.golden-gryphon.com
+.\" Last Modified By : Manoj Srivastava
+.\" Last Modified On : Mon Feb 26 23:18:43 2007
+.\" Last Machine Used: glaurung.internal.golden-gryphon.com
+.\" Update Count     : 12
+.\" Status           : Unknown, Use with caution!
+.\" HISTORY          : 
+.\" Description      : 
+.\" 
+.\" Copyright (c) 20077 Manoj Srivastava <srivasta@debian.org>
+.\"
+.\" This is free documentation; you can redistribute it and/or
+.\" modify it under the terms of the GNU General Public License as
+.\" published by the Free Software Foundation; either version 2 of
+.\" the License, or (at your option) any later version.
+.\"
+.\" The GNU General Public License's references to "object code"
+.\" and "executables" are to be interpreted as the output of any
+.\" document formatting or typesetting system, including
+.\" intermediate and printed output.
+.\"
+.\" This manual is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public
+.\" License along with this manual; if not, write to the Free
+.\" Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139,
+.\" USA.
+.\"
+.\" arch-tag: 8236ff3b-4ae2-4591-afa3-298e441e927c
+.\"
+.TH POLICYGENTOOL 1 "Feb 27 2007" "Debian" "Debian GNU/Linux manual"
+.SH NAME
+policygentool \- Interactive SELinux policy generation tool
+.SH SYNOPSIS
+.B policygentool
+.I [options]
+.I <Module Name>
+.I <full path for application binary file>
+.SH DESCRIPTION
+This tool generate three files for policy development, A Type Enforcement (te)
+file, a File Context (fc), and a Interface File(if).  Most of the policy rules
+will be written in the te file.  Use the File Context file to associate file
+paths with security context.  Use the interface rules to allow other protected
+domains to interact with the newly defined domains.
+.PP
+The tool prompts for locations of
+.I pidfiles,
+any 
+.I logfiles,
+files in 
+.I /var/lib,
+and any
+.I init scripts,
+and whether any network access is desirable for the application. The
+tool then generates the appropriate policy rules for the module.
+After these files have been generated, the make files for the
+appropriate SELinux policy, namely,
+.I /usr/share/selinux/refpolicy-targeted/include/Makefile
+or
+.I /usr/share/selinux/refpolicy-strict/include/Makefile
+can be used to compile the SELinux policy policy package.  The
+resulting policy package can be loaded using
+.B semodule.
+.PP
+  # /usr/bin/policygentool myapp /usr/bin/myapp
+  # cat >Makefile
+  > HEADERDIR:=/usr/share/selinux/refpolicy-targeted/include
+  > include $(HEADERDIR)/Makefile
+  > ^D
+  # make
+  # semodule -l myapp.pp
+  # restorecon -R -v /usr/bin/myapp "all files defined in myapp.fc"
+  # setenforce 0
+  # /etc/init.d/myapp start
+  # audit2allow -R -i /var/log/audit/audit.log
+.SH OPTIONS
+.TP
+.B "-h, --help"
+Print a short usage message.
+.SH FILES
+.PP
+.I myapp.te,
+.I myapp.if,
+.I myapp.fc.
+.SH "SEE ALSO"
+semodule(8),
+check_policy(8),
+load_policy(8).
+.SH BUGS
+None known.
+.SH AUTHOR
+This manual page was written by Manoj Srivastava <srivasta@debian.org>,
+for the Debian GNU/Linux system.

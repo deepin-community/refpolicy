@@ -1,0 +1,58 @@
+Index: refpolicy-2.20240202/policy/modules/services/apache.te
+===================================================================
+--- refpolicy-2.20240202.orig/policy/modules/services/apache.te
++++ refpolicy-2.20240202/policy/modules/services/apache.te
+@@ -436,6 +436,7 @@ manage_files_pattern(httpd_t, httpd_tmpf
+ manage_lnk_files_pattern(httpd_t, httpd_tmpfs_t, httpd_tmpfs_t)
+ manage_fifo_files_pattern(httpd_t, httpd_tmpfs_t, httpd_tmpfs_t)
+ manage_sock_files_pattern(httpd_t, httpd_tmpfs_t, httpd_tmpfs_t)
++allow httpd_t httpd_tmpfs_t:file map;
+ fs_tmpfs_filetrans(httpd_t, httpd_tmpfs_t, { dir file lnk_file sock_file fifo_file })
+ 
+ manage_dirs_pattern(httpd_t, httpd_var_lib_t, httpd_var_lib_t)
+@@ -899,6 +900,7 @@ optional_policy(`
+ ')
+ 
+ optional_policy(`
++	sympa_connect_runtime_sock_files(httpd_t)
+ 	sympa_manage_runtime_sock_files(httpd_t)
+ 	sympa_map_var_files(httpd_t)
+ 	sympa_read_conf(httpd_t)
+Index: refpolicy-2.20240202/policy/modules/services/exim.te
+===================================================================
+--- refpolicy-2.20240202.orig/policy/modules/services/exim.te
++++ refpolicy-2.20240202/policy/modules/services/exim.te
+@@ -102,6 +102,7 @@ files_tmp_filetrans(exim_t, exim_tmp_t,
+ 
+ manage_files_pattern(exim_t, exim_var_lib_t, exim_var_lib_t)
+ 
++kernel_getattr_proc(exim_t)
+ kernel_read_kernel_sysctls(exim_t)
+ kernel_read_network_state(exim_t)
+ kernel_dontaudit_read_system_state(exim_t)
+Index: refpolicy-2.20240202/policy/modules/services/spamassassin.fc
+===================================================================
+--- refpolicy-2.20240202.orig/policy/modules/services/spamassassin.fc
++++ refpolicy-2.20240202/policy/modules/services/spamassassin.fc
+@@ -16,7 +16,7 @@ HOME_DIR/\.spamd(/.*)?			gen_context(sys
+ /usr/bin/spamd			--	gen_context(system_u:object_r:spamd_exec_t,s0)
+ /usr/bin/spampd			--	gen_context(system_u:object_r:spamd_exec_t,s0)
+ /usr/bin/sa-update		--	gen_context(system_u:object_r:spamd_update_exec_t,s0)
+-/usr/bin/rspamd-[^/]+	--	gen_context(system_u:object_r:spamd_exec_t,s0)
++/usr/bin/rspamd	--	gen_context(system_u:object_r:spamd_exec_t,s0)
+ /usr/bin/rspamc-[^/]+	--	gen_context(system_u:object_r:spamc_exec_t,s0)
+ /usr/bin/rspamadm-[^/]+	--	gen_context(system_u:object_r:spamc_exec_t,s0)
+ 
+Index: refpolicy-2.20240202/policy/modules/kernel/corenetwork.te.in
+===================================================================
+--- refpolicy-2.20240202.orig/policy/modules/kernel/corenetwork.te.in
++++ refpolicy-2.20240202/policy/modules/kernel/corenetwork.te.in
+@@ -264,7 +264,7 @@ network_port(smtp, tcp,25,s0, tcp,465,s0
+ network_port(snmp, udp,161,s0, udp,162,s0, tcp,199,s0, tcp,1161,s0)
+ network_port(socks) # no defined portcon
+ network_port(soundd, tcp,8000,s0, tcp,9433,s0, tcp, 16001, s0)
+-network_port(spamd, tcp,783,s0, tcp,11333,s0)
++network_port(spamd, tcp,783,s0, tcp,11332,s0, tcp,11333,s0, tcp,11334,s0, tcp,11335,s0)
+ network_port(speech, tcp,8036,s0)
+ network_port(squid, udp,3401,s0, tcp,3401,s0, udp,4827,s0, tcp,4827,s0) # snmp and htcp
+ network_port(ssdp, tcp,1900,s0, udp,1900,s0)

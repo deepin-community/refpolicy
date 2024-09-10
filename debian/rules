@@ -1,4 +1,178 @@
 #!/usr/bin/make -f
+# -*- makefile -*-
+
+COMMON_OPTIONS = DISTRO=debian DIRECT_INITRC=y MONOLITHIC=n SYSTEMD=y WERROR=y
+FLAVOURS = default mls
+TYPE_default = mcs
+UBAC_default = y
+UNK_PERMS_default = allow
+TYPE_mls = mls
+UBAC_mls = n
+UNK_PERMS_mls = deny
+
+BUILD_DATE := $(shell date -u -d "@$(SOURCE_DATE_EPOCH)" "+%Y-%m-%d %H:%M:%S" 2>/dev/null)
+
+ifneq (,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
+    NUMJOBS = $(patsubst parallel=%,%,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
+    MAKEFLAGS += -j$(NUMJOBS)
+endif
 
 %:
 	dh $@
+
+override_dh_auto_configure: $(patsubst %, conf-%-policy, $(FLAVOURS)) conf-docs conf-src
+
+override_dh_fixperms:
+	dh_fixperms
+	chmod +x $(CURDIR)/debian/selinux-policy-dev/usr/share/selinux/devel/include/support/segenxml.py
+	for flavour in $(FLAVOURS) ; do \
+	  chmod 0700 $(CURDIR)/debian/selinux-policy-$$flavour/var/lib/selinux/$$flavour; \
+	done
+
+override_dh_compress:
+	dh_compress
+	for flavour in $(FLAVOURS) ; do \
+	  find $(CURDIR)/debian/selinux-policy-$$flavour/usr/share/selinux/$$flavour/ -name "*.pp" | xargs -P $(NUMJOBS) -I STR sh -c "bzip2 -9 < STR > STR.bz2 && rm STR" ; \
+	done
+
+override_dh_installdeb:
+	for flavour in $(FLAVOURS) ; do \
+	  sed -e "s/=FLAVOUR=/$$flavour/g" debian/preinst.policy > $(CURDIR)/debian/selinux-policy-$$flavour.preinst; \
+	  sed -e "s/=FLAVOUR=/$$flavour/g" debian/postinst.policy > $(CURDIR)/debian/selinux-policy-$$flavour.postinst; \
+	  sed -e "s/=FLAVOUR=/$$flavour/g" debian/postrm.policy > $(CURDIR)/debian/selinux-policy-$$flavour.postrm; \
+	done
+	dh_installdeb
+
+override_dh_clean:
+	dh_clean
+	$(MAKE) bare
+	for flavour in $(FLAVOURS) ; do \
+	  rm -f $(CURDIR)/debian/selinux-policy-$$flavour.preinst; \
+	  rm -f $(CURDIR)/debian/selinux-policy-$$flavour.postinst; \
+	  rm -f $(CURDIR)/debian/selinux-policy-$$flavour.postrm; \
+	  rm -rf $(CURDIR)/debian/build-$$flavour; \
+	  rm -f build-$$flavour-policy; \
+	  rm -f install-$$flavour-policy; \
+	  rm -f conf-$$flavour-policy; \
+	done
+	rm -f install-default-dev;
+	rm -rf $(CURDIR)/debian/build-docs;
+	rm -rf $(CURDIR)/debian/build-src;
+	rm -rf support/__pycache__/;
+	rm -f support/pyplate.pyc conf-docs install-docs conf-src install-src
+
+override_dh_auto_build: $(patsubst %, build-%-policy, $(FLAVOURS))
+
+override_dh_auto_install: $(patsubst %, install-%-policy, $(FLAVOURS)) install-default-dev install-docs install-src
+
+override_dh_auto_test: $(patsubst %, test-%-policy, $(FLAVOURS))
+
+conf-%-policy:
+	test ! -d $(CURDIR)/debian/build-$* ||                             \
+            rm -rf $(CURDIR)/debian/build-$*
+	mkdir -p    $(CURDIR)/debian/build-$*
+	cp -lr policy support Makefile Rules.modular doc                   \
+            Rules.monolithic config VERSION Changelog COPYING INSTALL      \
+            README man $(CURDIR)/debian/build-$*
+	cp debian/build.conf.$* $(CURDIR)/debian/build-$*/build.conf
+	$(MAKE) -C $(CURDIR)/debian/build-$*                               \
+                   NAME=$* TYPE=$(TYPE_$*) UBAC=$(UBAC_$*) UNK_PERMS=$(UNK_PERMS_$*) $(COMMON_OPTIONS) bare
+	(cd $(CURDIR)/debian/build-$* ;                            \
+           $(MAKE) NAME=$* TYPE=$(TYPE_$*) UBAC=$(UBAC_$*) UNK_PERMS=$(UNK_PERMS_$*) $(COMMON_OPTIONS) conf)
+	cp debian/modules.conf.$*                                          \
+                     $(CURDIR)/debian/build-$*/policy/modules.conf
+	touch $@
+
+conf-docs:
+	test ! -d $(CURDIR)/debian/build-docs ||                   \
+           rm -rf $(CURDIR)/debian/build-docs
+	mkdir -p    $(CURDIR)/debian/build-docs
+	cp -lr policy support Makefile Rules.modular doc                \
+                Rules.monolithic config VERSION Changelog COPYING INSTALL   \
+                README man $(CURDIR)/debian/build-docs
+	cp  debian/build.conf.default $(CURDIR)/debian/build-docs/build.conf
+	(cd $(CURDIR)/debian/build-docs ;                          \
+           $(MAKE) NAME=default TYPE=mcs UBAC=y UNK_PERMS=allow $(COMMON_OPTIONS) conf)
+	touch $@
+
+conf-src:
+	test ! -d $(CURDIR)/debian/build-src ||                  \
+	    rm -rf $(CURDIR)/debian/build-src
+	mkdir -p    $(CURDIR)/debian/build-src
+	cp -lr policy support Makefile Rules.modular  doc               \
+	       Rules.monolithic config VERSION Changelog COPYING INSTALL  \
+	        README man $(CURDIR)/debian/build-src
+	cp  debian/build.conf.default $(CURDIR)/debian/build-src/build.conf
+	(cd $(CURDIR)/debian/build-src ;                         \
+	   $(MAKE) NAME=default $(OPTIONS) conf)
+	cp debian/modules.conf.*      $(CURDIR)/debian/build-src/policy/
+	cp debian/build.conf.default $(CURDIR)/debian/build-src/policy/
+	touch $@
+
+
+build-%-policy: conf-%-policy
+	(cd $(CURDIR)/debian/build-$* ;                          \
+             $(MAKE) NAME=$* TYPE=$(TYPE_$*) UBAC=$(UBAC_$*) UNK_PERMS=$(UNK_PERMS_$*) $(COMMON_OPTIONS) policy)
+	touch $@
+
+test-%-policy: build-%-policy
+	(cd $(CURDIR)/debian/build-$*; \
+	    $(MAKE) NAME=$* TYPE=$(TYPE_$*) UBAC=$(UBAC_$*) UNK_PERMS=$(UNK_PERMS_$*) $(COMMON_OPTIONS) validate)
+	touch $@
+
+install-%-policy: build-%-policy
+	(cd $(CURDIR)/debian/build-$*; \
+	    $(MAKE) NAME=$* TYPE=$(TYPE_$*) UBAC=$(UBAC_$*) UNK_PERMS=$(UNK_PERMS_$*) $(COMMON_OPTIONS) DESTDIR=$(CURDIR)/debian/tmp install)
+	cp -a debian/setrans.conf.$* $(CURDIR)/debian/tmp/etc/selinux/$*/setrans.conf
+	mkdir -p $(CURDIR)/debian/tmp/etc/selinux/$*/contexts/files/
+	mkdir -p $(CURDIR)/debian/tmp/etc/selinux/$*/policy/
+	mkdir -p $(CURDIR)/debian/tmp/var/lib/selinux/$*
+# Create a list with the modules we are shipping
+	(cd $(CURDIR)/debian/tmp/usr/share/selinux/$*; LC_ALL=C ls -1 *.pp | cut -d. -f1 > .modules)
+	(cd $(CURDIR)/debian/tmp/usr/share/selinux/$*; grep -P '^[a-z0-9_]+\s*=\s*base$$' $(CURDIR)/debian/build-$*/policy/modules.conf | cut -d= -f1 | awk '{$$1=$$1};1' | LC_ALL=C sort > .basemodules)
+	touch $@
+
+# The headers are based on the default policy
+install-default-dev: build-default-policy
+	(cd $(CURDIR)/debian/build-default; \
+	    $(MAKE) NAME=default TYPE=$(TYPE_default) UBAC=$(UBAC_default) UNK_PERMS=$(UNK_PERMS_default) $(COMMON_OPTIONS) DESTDIR=$(CURDIR)/debian/tmp install-headers)
+	mkdir -p $(CURDIR)/debian/tmp/usr/share/selinux/devel/
+	mv $(CURDIR)/debian/tmp/usr/share/selinux/default/include $(CURDIR)/debian/tmp/usr/share/selinux/devel/
+	cp -a $(CURDIR)/debian/build-default/doc/policy.dtd $(CURDIR)/debian/tmp/usr/share/selinux/devel/
+	cp -a $(CURDIR)/debian/build-default/doc/policy.xml $(CURDIR)/debian/tmp/usr/share/selinux/devel/
+	grep -v genfscon.selinuxfs $(CURDIR)/debian/tmp/usr/share/selinux/devel/include/kernel/selinux.if > $(CURDIR)/debian/tmp/usr/share/selinux/devel/include/kernel/selinux.if.new
+	mv $(CURDIR)/debian/tmp/usr/share/selinux/devel/include/kernel/selinux.if.new $(CURDIR)/debian/tmp/usr/share/selinux/devel/include/kernel/selinux.if
+	cp -a $(CURDIR)/debian/Makefile.devel $(CURDIR)/debian/tmp/usr/share/selinux/devel/Makefile
+	touch $@
+
+install-docs: conf-docs
+	(cd $(CURDIR)/debian/build-docs; \
+	    $(MAKE) NAME=default TYPE=mcs UBAC=n UNK_PERMS=allow $(COMMON_OPTIONS) DESTDIR=$(CURDIR)/debian/tmp/ PKGNAME=selinux-policy-doc conf \
+	    $(MAKE) NAME=default TYPE=mcs UBAC=n UNK_PERMS=allow $(COMMON_OPTIONS) DESTDIR=$(CURDIR)/debian/tmp/ PKGNAME=selinux-policy-doc html \
+	    $(MAKE) NAME=default TYPE=mcs UBAC=n UNK_PERMS=allow $(COMMON_OPTIONS) DESTDIR=$(CURDIR)/debian/tmp/ PKGNAME=selinux-policy-doc install-docs)
+	touch $@
+
+install-src: conf-src
+	mkdir -p    $(CURDIR)/debian/tmp/usr/src
+	(cd $(CURDIR)/debian/build-src;                                 \
+	 $(MAKE) NAME=default TYPE=mcs UBAC=n UNK_PERMS=allow $(COMMON_OPTIONS) DESTDIR=$(CURDIR)/debian/tmp/ bare; \
+	 $(MAKE) NAME=default TYPE=mcs UBAC=n UNK_PERMS=allow $(COMMON_OPTIONS) DESTDIR=$(CURDIR)/debian/tmp/ conf; \
+	 $(MAKE) NAME=default TYPE=mcs UBAC=n UNK_PERMS=allow $(COMMON_OPTIONS) DESTDIR=$(CURDIR)/debian/tmp/ install-src; )
+	find $(CURDIR)/debian/tmp -type d -name .arch-ids -print0 | xargs -0r rm -rf
+	test ! -e $(CURDIR)/debian/tmp/etc/selinux/default/src/policy/COPYING || \
+	   rm -f $(CURDIR)/debian/tmp/etc/selinux/default/src/policy/COPYING
+	rm -rf   $(CURDIR)/debian/tmp/etc/selinux/default/src/policy/man
+	(cd $(CURDIR)/debian/tmp/etc/selinux/default/src/policy;                   \
+	  if test -f modules.conf; then                                   \
+	      mv modules.conf modules.conf.dist;                          \
+	  fi;                                                             \
+	  ln -sf modules.conf.mls modules.conf)
+	install -p -m 644      debian/build.conf.default                   \
+	                     $(CURDIR)/debian/tmp/etc/selinux/default/src/policy/build.conf
+	(cd $(CURDIR)/debian/tmp/etc/selinux/default/src/; mv policy selinux-policy-src;   \
+	  rm -rf selinux-policy-src/support/__pycache__/; \
+	  find selinux-policy-src -type f -print0 | xargs -0r chmod 0644; \
+	  find selinux-policy-src -type d -print0 | xargs -0r chmod 0755; \
+	  TZ=UTC tar cf - --sort=name --mtime="$(BUILD_DATE)" --owner=0 --group=0 --numeric-owner selinux-policy-src | zstd -19 -T0 > $(CURDIR)/debian/tmp/usr/src/selinux-policy-src.tar.zst)
+	rm -rf               $(CURDIR)/debian/tmp/etc/selinux/default/src/
+	touch $@

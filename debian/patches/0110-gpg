@@ -1,0 +1,189 @@
+Description: Create user_gpg_t etc domains, remove gpg_helper_t & gpg_pinentry_t
+ Only transition to gpg_t from user_t to solve problems with X sessions.
+ Also remove gpg_helper_t and gpg_pinentry_t because they don't do any good.
+ .
+Author: Russell Coker <russell@coker.com.au>
+Last-Update: 2015-01-12
+
+Index: refpolicy-2.20240713/policy/modules/apps/gpg.fc
+===================================================================
+--- refpolicy-2.20240713.orig/policy/modules/apps/gpg.fc
++++ refpolicy-2.20240713/policy/modules/apps/gpg.fc
+@@ -6,10 +6,10 @@ HOME_DIR/\.gnupg/S\.scdaemon		-s	gen_con
+ /usr/bin/gpg(2)?			--	gen_context(system_u:object_r:gpg_exec_t,s0)
+ /usr/bin/gpgsm				--	gen_context(system_u:object_r:gpg_exec_t,s0)
+ /usr/bin/gpg-agent			--	gen_context(system_u:object_r:gpg_agent_exec_t,s0)
+-/usr/bin/pinentry.*			--	gen_context(system_u:object_r:gpg_pinentry_exec_t,s0)
++/usr/bin/pinentry.*			--	gen_context(system_u:object_r:gpg_agent_exec_t,s0)
+ 
+ /usr/lib/gnupg/.*			--	gen_context(system_u:object_r:gpg_exec_t,s0)
+-/usr/lib/gnupg/gpgkeys.*		--	gen_context(system_u:object_r:gpg_helper_exec_t,s0)
++/usr/lib/gnupg/gpgkeys.*		--	gen_context(system_u:object_r:gpg_exec_t,s0)
+ 
+ /run/user/%{USERID}/gnupg(/.*)?			gen_context(system_u:object_r:gpg_runtime_t,s0)
+ /run/user/%{USERID}/gnupg/S\.gpg-agent.* -s	gen_context(system_u:object_r:gpg_agent_tmp_t,s0)
+Index: refpolicy-2.20240713/policy/modules/apps/gpg.if
+===================================================================
+--- refpolicy-2.20240713.orig/policy/modules/apps/gpg.if
++++ refpolicy-2.20240713/policy/modules/apps/gpg.if
+@@ -57,6 +57,9 @@ template(`gpg_role',`
+ 	filetrans_pattern($2, gpg_secret_t, gpg_agent_tmp_t, sock_file, "log-socket")
+ 	userdom_user_home_dir_filetrans($2, gpg_secret_t, dir, ".gnupg")
+ 
++	# so gpg_agent_t can append to .xsession-errors
++	userdom_append_inherited_user_home_content_files(gpg_agent_t)
++
+ 	optional_policy(`
+ 		gpg_pinentry_dbus_chat($3)
+ 	')
+@@ -252,6 +255,28 @@ interface(`gpg_signal',`
+ 	allow $1 gpg_t:process signal;
+ ')
+ 
++#######################################
++## <summary>
++##      Transition to $2_gpg_agent_t from another domain via gpg_agent_exec_t
++## </summary>
++## <param name="domain">
++##      <summary>
++##      source domain
++##      </summary>
++## </param>
++## <param name="domain">
++##      <summary>
++##      base of target domain
++##      </summary>
++## </param>
++#
++interface(`gpg_enter_user_gpg_agent_domain',`
++        gen_require(`
++                type gpg_agent_exec_t, $2_gpg_agent_t;
++        ')
++        domain_auto_transition_pattern($1, gpg_agent_exec_t, $2_gpg_agent_t)
++')
++
+ ########################################
+ ## <summary>
+ ##	Read and write gpg agent pipes.
+Index: refpolicy-2.20240713/policy/modules/system/userdomain.if
+===================================================================
+--- refpolicy-2.20240713.orig/policy/modules/system/userdomain.if
++++ refpolicy-2.20240713/policy/modules/system/userdomain.if
+@@ -2358,6 +2358,24 @@ interface(`userdom_dontaudit_append_user
+ 
+ ########################################
+ ## <summary>
++##	Allow append on inherited user home files.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain to allow.
++##	</summary>
++## </param>
++#
++interface(`userdom_append_inherited_user_home_content_files',`
++	gen_require(`
++		type user_home_t;
++	')
++
++	allow $1 user_home_t:file { append getattr ioctl };
++')
++
++########################################
++## <summary>
+ ##	Do not audit attempts to write user home files.
+ ## </summary>
+ ## <param name="domain">
+Index: refpolicy-2.20240713/policy/modules/services/ssh.if
+===================================================================
+--- refpolicy-2.20240713.orig/policy/modules/services/ssh.if
++++ refpolicy-2.20240713/policy/modules/services/ssh.if
+@@ -397,6 +397,7 @@ template(`ssh_role_template',`
+ 	ps_process_pattern($3, $1_ssh_agent_t)
+ 
+ 	domtrans_pattern($3, ssh_agent_exec_t, $1_ssh_agent_t)
++	userdom_append_inherited_user_home_content_files($1_ssh_agent_t)
+ 
+ 	kernel_read_kernel_sysctls($1_ssh_agent_t)
+ 
+Index: refpolicy-2.20240713/policy/modules/services/dbus.if
+===================================================================
+--- refpolicy-2.20240713.orig/policy/modules/services/dbus.if
++++ refpolicy-2.20240713/policy/modules/services/dbus.if
+@@ -79,6 +79,9 @@ template(`dbus_role_template',`
+ 	type $1_dbusd_tmpfs_t;
+ 	files_tmpfs_file($1_dbusd_tmpfs_t)
+ 
++	# for .xsession-errors
++	userdom_append_inherited_user_home_content_files($1_dbusd_t)
++
+ 	role $2 types $1_dbusd_t;
+ 
+ 	##############################
+@@ -261,7 +264,7 @@ interface(`dbus_all_session_bus_client',
+ 	allow $1 { session_bus_type self }:dbus send_msg;
+ 	allow session_bus_type $1:dbus send_msg;
+ 
+-	allow $1 session_bus_type:unix_stream_socket connectto;
++	allow $1 session_bus_type:unix_stream_socket { connectto rw_socket_perms };
+ 	allow $1 session_bus_type:fd use;
+ 
+ 	dbus_rw_session_tmp_sockets($1)
+@@ -296,7 +299,7 @@ template(`dbus_spec_session_bus_client',
+ 	allow $2 { $1_dbusd_t self }:dbus send_msg;
+ 	allow $1_dbusd_t $2:dbus send_msg;
+ 
+-	allow $2 $1_dbusd_t:unix_stream_socket connectto;
++	allow $2 $1_dbusd_t:unix_stream_socket { connectto rw_socket_perms };
+ 	allow $2 $1_dbusd_t:fd use;
+ ')
+ 
+Index: refpolicy-2.20240713/policy/modules/services/cron.if
+===================================================================
+--- refpolicy-2.20240713.orig/policy/modules/services/cron.if
++++ refpolicy-2.20240713/policy/modules/services/cron.if
+@@ -825,10 +825,31 @@ interface(`cron_read_system_job_tmp_file
+ 	')
+ 
+ 	files_search_tmp($1)
++	allow $1 system_cronjob_tmp_t:dir search_dir_perms;
+ 	allow $1 system_cronjob_tmp_t:file read_file_perms;
+ ')
+ 
+ ########################################
++## <summary>
++##	Read/write system cron job temporary files.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`cron_rw_system_job_tmp_files',`
++	gen_require(`
++		type system_cronjob_tmp_t;
++	')
++
++	files_search_tmp($1)
++	allow $1 system_cronjob_tmp_t:dir search_dir_perms;
++	allow $1 system_cronjob_tmp_t:file rw_file_perms;
++')
++
++########################################
+ ## <summary>
+ ##	Do not audit attempts to append temporary
+ ##	system cron job files.
+Index: refpolicy-2.20240713/policy/modules/apps/gpg.te
+===================================================================
+--- refpolicy-2.20240713.orig/policy/modules/apps/gpg.te
++++ refpolicy-2.20240713/policy/modules/apps/gpg.te
+@@ -85,6 +85,8 @@ allow gpg_t self:fifo_file rw_fifo_file_
+ allow gpg_t self:tcp_socket { accept listen };
+ allow gpg_t self:unix_stream_socket create_stream_socket_perms;
+ 
++can_exec(gpg_agent_t, gpg_agent_exec_t)
++
+ manage_dirs_pattern(gpg_t, gpg_runtime_t, gpg_runtime_t)
+ userdom_user_runtime_filetrans(gpg_t, gpg_runtime_t, dir, "gnupg")
+ manage_sock_files_pattern(gpg_t, gpg_runtime_t, gpg_runtime_t)

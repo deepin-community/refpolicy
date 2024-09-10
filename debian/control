@@ -1,15 +1,152 @@
-Source: template-repository
-Section: unknown
+Source: refpolicy
+Vcs-Git: https://salsa.debian.org/selinux-team/refpolicy.git
+Vcs-Browser: https://salsa.debian.org/selinux-team/refpolicy
 Priority: optional
-Maintainer: Tsic404 <liuheng@deepin.org>
-Build-Depends: debhelper (>= 11)
-Standards-Version: 4.1.3
-Homepage: https://github.com/deepin-community/template-repository
-#Vcs-Browser: https://salsa.debian.org/debian/deepin-community-template-repository
-#Vcs-Git: https://salsa.debian.org/debian/deepin-community-template-repository.git
+Section: admin
+Homepage: https://github.com/SELinuxProject/refpolicy/releases
+Maintainer: Debian SELinux maintainers <selinux-devel@lists.alioth.debian.org>
+Uploaders: Russell Coker <russell@coker.com.au>
+Standards-Version: 4.6.2
+Rules-Requires-Root: no
+Build-Depends: debhelper-compat (= 13)
+Build-Depends-Indep: bzip2,
+                     checkpolicy (>= 3.5),
+                     gawk,
+                     m4,
+                     policycoreutils (>= 3.5),
+                     policycoreutils-python-utils (>= 3.5),
+                     python3,
+		     zstd
 
-Package: template-repository
-Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
-Description: <insert up to 60 chars description>
- <insert long description, indented with spaces>
+Package: selinux-policy-default
+Architecture: all
+Depends: libselinux1 (>= 3.5),
+         libsemanage2 (>= 3.5),
+         libsepol2 (>= 3.5),
+         policycoreutils (>= 3.5-2),
+         selinux-utils (>= 3.5),
+         ${misc:Depends}
+Recommends: checkpolicy, setools
+Suggests: logcheck, syslog-summary
+Breaks: selinux-basics (<< 0.5.2~)
+Conflicts: mcstrans
+Description: Strict and Targeted variants of the SELinux policy
+ This is the reference policy for SE Linux.  In the default configuration it
+ will provide the functionality previously known as the "targeted" policy.  If
+ the module "unconfined" is removed then it provides the functionality
+ previously known as the "strict" policy.
+ .
+ This uses the MMCS system of categories.
+
+Package: selinux-policy-mls
+Architecture: all
+Depends: libselinux1 (>= 3.5),
+         libsemanage2 (>= 3.5),
+         libsepol2 (>= 3.5),
+         policycoreutils (>= 3.5-2),
+         selinux-utils (>= 3.5),
+         ${misc:Depends}
+Recommends: checkpolicy, setools
+Suggests: logcheck, syslog-summary
+Breaks: selinux-basics (<< 0.5.2~)
+Conflicts: mcstrans
+Description: MLS (Multi Level Security) variant of the SELinux policy
+ This is the reference policy for SE Linux built with MLS support.  It allows
+ giving data labels such as "Top Secret" and preventing such data from leaking
+ to processes or files with lower classification.
+ .
+ It was developed for Common Criteria LSPP certification for RHEL.  It will
+ probably never be well supported in Debian and is only recommended for
+ students who want to learn about the security features used by the military.
+
+Package: selinux-policy-src
+Architecture: all
+Depends: checkpolicy (>= 3.5),
+         gawk,
+         make,
+         policycoreutils (>= 3.5),
+         policycoreutils-python-utils (>= 3.5),
+         python3,
+         ${misc:Depends}
+Recommends: policycoreutils-dev (>= 3.5), setools
+Suggests: logcheck, syslog-summary
+Description: Source of the SELinux reference policy for customization
+ The SELinux Reference Policy (refpolicy) is a complete SELinux
+ policy, as an alternative to the existing strict and targeted
+ policies available from http://selinux.sf.net. The goal is to have
+ this policy as the system policy, be and used as the basis for
+ creating other policies. Refpolicy is based on the current strict and
+ targeted policies, but aims to accomplish many additional
+ goals:
+  + Strong Modularity
+  + Clearly stated security Goals
+  + Documentation
+  + Development Tool Support
+  + Forward Looking
+  + Configurability
+  + Flexible Base Policy
+  + Application Policy Variations
+  + Multi-Level Security
+ .
+ This is the source of the policy, provided so that local variations of
+ SELinux policy may be created.
+
+Package: selinux-policy-dev
+Architecture: all
+Depends: checkpolicy (>= 3.5),
+         gawk,
+         m4,
+         make,
+         policycoreutils (>= 3.5),
+         policycoreutils-dev (>= 3.5),
+         policycoreutils-python-utils (>= 3.5),
+         python3,
+         selinux-utils (>= 3.5),
+         ${misc:Depends}
+Recommends: setools
+Description: Headers from the SELinux reference policy for building modules
+ The SELinux Reference Policy (refpolicy) is a complete SELinux
+ policy, as an alternative to the existing strict and targeted
+ policies available from http://selinux.sf.net. The goal is to have
+ this policy as the system policy, be and used as the basis for
+ creating other policies. Refpolicy is based on the current strict and
+ targeted policies, but aims to accomplish many additional
+ goals:
+  + Strong Modularity
+  + Clearly stated security Goals
+  + Documentation
+  + Development Tool Support
+  + Forward Looking
+  + Configurability
+  + Flexible Base Policy
+  + Application Policy Variations
+  + Multi-Level Security
+ .
+ This package provides header files for building your own SELinux
+ policy packages compatible with official policy packages.
+
+Package: selinux-policy-doc
+Architecture: all
+Section: doc
+Depends: ${misc:Depends}
+Recommends: gcc, make
+Conflicts: selinux-policy-refpolicy-doc
+Description: Documentation for the SELinux reference policy
+ The SELinux Reference Policy (refpolicy) is a complete SELinux
+ policy, as an alternative to the existing strict and targeted
+ policies available from http://selinux.sf.net. The goal is to have
+ this policy as the system policy, be and used as the basis for
+ creating other policies. Refpolicy is based on the current strict and
+ targeted policies, but aims to accomplish many additional
+ goals:
+  + Strong Modularity
+  + Clearly stated security Goals
+  + Documentation
+  + Development Tool Support
+  + Forward Looking
+  + Configurability
+  + Flexible Base Policy
+  + Application Policy Variations
+  + Multi-Level Security
+ .
+ This package contains the documentation for the reference policy.
