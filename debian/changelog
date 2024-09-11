@@ -1,3 +1,9 @@
+refpolicy (2:2.20240723-2deepin1) unstable; urgency=medium
+
+  * add usec policy
+
+ -- zhouzilong <zhouzilong@uniontech.com>  Tue, 10 Sep 2024 20:15:26 +0800
+
 refpolicy (2:2.20240723-2) unstable; urgency=medium
 
   * Allow chromium_t execheap access which Chrome now needs, presumably for
