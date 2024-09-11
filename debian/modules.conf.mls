@@ -2762,3 +2762,10 @@ userdomain = base
 # Policy for xdg cache types
 #
 xdg = module
+
+# Layer: contrib
+# Module: deepin_perm_control
+#
+# Policy for deepin_perm_control
+#
+deepin_perm_control = module
