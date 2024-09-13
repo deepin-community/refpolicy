@@ -1,3 +1,9 @@
+refpolicy (2:2.20240723-2deepin2) unstable; urgency=medium
+
+  * usec support process unkill boolean
+
+ -- zhouzilong <zhouzilong@uniontech.com>  Fri, 13 Sep 2024 15:18:42 +0800
+
 refpolicy (2:2.20240723-2deepin1) unstable; urgency=medium
 
   * add usec policy
