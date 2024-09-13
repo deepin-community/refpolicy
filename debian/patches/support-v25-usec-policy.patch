@@ -4690,7 +4690,7 @@ Index: refpolicy-deepin/policy/modules/services/deepin_perm_control.if
 +#
 +interface(`deepin_process_unkillable',`
 +	gen_require(`
-+		attribute domain;
++		attribute deepin_executable_file_type;
 +		class service { stop reload };
 +	')
 +
@@ -4702,8 +4702,8 @@ Index: refpolicy-deepin/policy/modules/services/deepin_perm_control.if
 +	gen_tunable(`allow_$1_be_unkillable', $2)
 +
 +	tunable_policy(`! allow_$1_be_unkillable',`
-+		allow domain $1_t:process { sigkill sigstop signal };
-+		allow domain $1_t:service { stop reload };
++		allow deepin_executable_file_type $1_t:process { sigkill sigstop signal };
++		allow deepin_executable_file_type $1_t:service { stop reload };
 +	')
 +')
 +
@@ -4719,7 +4719,7 @@ Index: refpolicy-deepin/policy/modules/services/deepin_perm_control.if
 +#
 +interface(`deepin_execfile_protection',`
 +	gen_require(`
-+		attribute domain;
++		attribute deepin_executable_file_type;
 +	')
 +
 +	## <desc>
@@ -4730,7 +4730,7 @@ Index: refpolicy-deepin/policy/modules/services/deepin_perm_control.if
 +	gen_tunable(`allow_$1_execfile_protection', $2)
 +
 +	tunable_policy(`! allow_$1_execfile_protection',`
-+		allow domain $1_t:dir_file_class_set ~{ relabelfrom relabelto };
++		allow deepin_executable_file_type $1_t:dir_file_class_set ~{ relabelfrom relabelto };
 +	')
 +')
 +
@@ -5108,7 +5108,6 @@ Index: refpolicy-deepin/policy/modules/services/deepin_perm_control.if
 +	allow $1 deepin_login_count_t:dbus send_msg;
 +	allow deepin_login_count_t $1:dbus send_msg;
 +')
-\ No newline at end of file
 Index: refpolicy-deepin/policy/modules/services/deepin_perm_control.te
 ===================================================================
 --- /dev/null
