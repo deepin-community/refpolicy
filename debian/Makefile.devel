@@ -16,6 +16,10 @@ ifeq ($(NAME),mls)
 	NTYPE = mls
 endif
 
+ifeq ($(NAME),usec)
+	NTYPE = usec
+endif
+
 TYPE ?= $(NTYPE)
 
 HEADERDIR := $(SHAREDIR)/devel/include

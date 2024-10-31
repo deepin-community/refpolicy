@@ -1,0 +1,2 @@
+selinux-policy-usec: non-standard-dir-perm 0700 != 0755 [var/lib/selinux/usec/]
+

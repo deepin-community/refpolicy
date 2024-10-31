@@ -1,3 +1,10 @@
+refpolicy (2:2.20240723-2deepin3) unstable; urgency=medium
+
+  * change to support umount control.                            
+
+ -- xiongyingrong <xiongyingrong@uniontech.com> Thu, 31 Oct 2024 15:37:26 +0800
+
+
 refpolicy (2:2.20240723-2deepin2) unstable; urgency=medium
 
   * usec support process unkill boolean

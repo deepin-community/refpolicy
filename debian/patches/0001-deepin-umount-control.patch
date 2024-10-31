@@ -1,0 +1,39 @@
+From b326ff0b0a12317382f582ae43e1dc02cc372448 Mon Sep 17 00:00:00 2001
+From: xyr218 <xiongyingrong@uniontech.com>
+Date: Thu, 31 Oct 2024 19:01:01 +0800
+Subject: [PATCH] 0001-deepin-umount-control.patch
+
+---
+ config/appconfig-mcs/seusers                   | 2 +-
+ policy/modules/services/deepin_perm_control.te | 8 ++++++++
+ 2 files changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/config/appconfig-mcs/seusers b/config/appconfig-mcs/seusers
+index 66c6742..cd04920 100644
+--- a/config/appconfig-mcs/seusers
++++ b/config/appconfig-mcs/seusers
+@@ -1,3 +1,3 @@
+ root:unconfined_u:s0-mcs_systemhigh
+ __default__:unconfined_u:s0-mcs_systemhigh
+-sddm:xdm:s0
++#sddm:xdm:s0
+diff --git a/policy/modules/services/deepin_perm_control.te b/policy/modules/services/deepin_perm_control.te
+index 0679477..ec485b7 100644
+--- a/policy/modules/services/deepin_perm_control.te
++++ b/policy/modules/services/deepin_perm_control.te
+@@ -858,3 +858,11 @@ allow deepin_home_sec_t filesystem_type:filesystem associate;
+ allow deepin_home_sec_t self:filesystem associate;
+ allow deepin_executable_file_type deepin_home_sec_t:file ~{ relabelfrom relabelto };
+ allow deepin_executable_file_type deepin_home_sec_t:dir list_dir_perms;
++
++# umount管控
++require {       
++    class filesystem unmount;     
++}
++type deepin_immutable_t;  
++deepin_app_domain_set(deepin_immutable_t);
++allow deepin_immutable_t deepin_ro_file_t:filesystem { unmount };
+\ No newline at end of file
+-- 
+2.20.1
+

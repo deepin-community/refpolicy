@@ -59,6 +59,20 @@ Description: MLS (Multi Level Security) variant of the SELinux policy
  probably never be well supported in Debian and is only recommended for
  students who want to learn about the security features used by the military.
 
+Package: selinux-policy-usec
+Architecture: all
+Depends: libselinux1 (>= 3.5),
+         libsemanage2 (>= 3.5),
+         libsepol2 (>= 3.5),
+         policycoreutils (>= 3.5-2),
+         selinux-utils (>= 3.5),
+         ${misc:Depends}
+Recommends: checkpolicy, setools
+Suggests: logcheck, syslog-summary
+Breaks: selinux-basics (<< 0.5.2~)
+Conflicts: mcstrans
+Description: usec
+
 Package: selinux-policy-src
 Architecture: all
 Depends: checkpolicy (>= 3.5),
