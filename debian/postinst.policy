@@ -117,7 +117,11 @@ case "$1" in
 	fi
 
 	ret=0
-	semodule -X $priority $noreload -s $flavour $to_remove $to_install $to_disable || ret=$?
+	if [ "${flavour}" = "usec" ];then
+		semodule -X $priority $noreload -s $flavour $to_remove $to_install || ret=$?
+	else
+		semodule -X $priority $noreload -s $flavour $to_remove $to_install $to_disable || ret=$?
+	fi
 	if [ $ret -eq 0 ]; then
 	    echo " done."
 	else

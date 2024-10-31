@@ -2,13 +2,16 @@
 # -*- makefile -*-
 
 COMMON_OPTIONS = DISTRO=debian DIRECT_INITRC=y MONOLITHIC=n SYSTEMD=y WERROR=y
-FLAVOURS = default mls
+FLAVOURS = default mls usec
 TYPE_default = mcs
 UBAC_default = y
 UNK_PERMS_default = allow
 TYPE_mls = mls
 UBAC_mls = n
 UNK_PERMS_mls = deny
+TYPE_usec = mcs
+UBAC_usec = y
+UNK_PERMS_usec = allow
 
 BUILD_DATE := $(shell date -u -d "@$(SOURCE_DATE_EPOCH)" "+%Y-%m-%d %H:%M:%S" 2>/dev/null)
 
@@ -56,6 +59,7 @@ override_dh_clean:
 	  rm -f conf-$$flavour-policy; \
 	done
 	rm -f install-default-dev;
+	rm -f install-usec-dev;
 	rm -rf $(CURDIR)/debian/build-docs;
 	rm -rf $(CURDIR)/debian/build-src;
 	rm -rf support/__pycache__/;
@@ -63,7 +67,7 @@ override_dh_clean:
 
 override_dh_auto_build: $(patsubst %, build-%-policy, $(FLAVOURS))
 
-override_dh_auto_install: $(patsubst %, install-%-policy, $(FLAVOURS)) install-default-dev install-docs install-src
+override_dh_auto_install: $(patsubst %, install-%-policy, $(FLAVOURS)) install-default-dev  install-docs install-src 
 
 override_dh_auto_test: $(patsubst %, test-%-policy, $(FLAVOURS))
 
@@ -91,6 +95,7 @@ conf-docs:
                 Rules.monolithic config VERSION Changelog COPYING INSTALL   \
                 README man $(CURDIR)/debian/build-docs
 	cp  debian/build.conf.default $(CURDIR)/debian/build-docs/build.conf
+	cp  debian/build.conf.usec $(CURDIR)/debian/build-docs/build.conf
 	(cd $(CURDIR)/debian/build-docs ;                          \
            $(MAKE) NAME=default TYPE=mcs UBAC=y UNK_PERMS=allow $(COMMON_OPTIONS) conf)
 	touch $@
@@ -144,6 +149,18 @@ install-default-dev: build-default-policy
 	mv $(CURDIR)/debian/tmp/usr/share/selinux/devel/include/kernel/selinux.if.new $(CURDIR)/debian/tmp/usr/share/selinux/devel/include/kernel/selinux.if
 	cp -a $(CURDIR)/debian/Makefile.devel $(CURDIR)/debian/tmp/usr/share/selinux/devel/Makefile
 	touch $@
+
+#install-usec-dev: build-usec-policy
+#	(cd $(CURDIR)/debian/build-usec; \
+#	    $(MAKE) NAME=usec TYPE=$(TYPE_usec) UBAC=$(UBAC_usec) UNK_PERMS=$(UNK_PERMS_usec) $(COMMON_OPTIONS) DESTDIR=$(CURDIR)/debian/tmp install-headers)
+#	mkdir -p $(CURDIR)/debian/tmp/usr/share/selinux/devel/
+#	mv $(CURDIR)/debian/tmp/usr/share/selinux/usec/include $(CURDIR)/debian/tmp/usr/share/selinux/devel/
+#	cp -a $(CURDIR)/debian/build-usec/doc/policy.dtd $(CURDIR)/debian/tmp/usr/share/selinux/devel/
+#	cp -a $(CURDIR)/debian/build-usec/doc/policy.xml $(CURDIR)/debian/tmp/usr/share/selinux/devel/
+#	grep -v genfscon.selinuxfs $(CURDIR)/debian/tmp/usr/share/selinux/devel/include/kernel/selinux.if > $(CURDIR)/debian/tmp/usr/share/selinux/devel/include/kernel/selinux.if.new
+#	mv $(CURDIR)/debian/tmp/usr/share/selinux/devel/include/kernel/selinux.if.new $(CURDIR)/debian/tmp/usr/share/selinux/devel/include/kernel/selinux.if
+#	cp -a $(CURDIR)/debian/Makefile.devel $(CURDIR)/debian/tmp/usr/share/selinux/devel/Makefile
+#	touch $@
 
 install-docs: conf-docs
 	(cd $(CURDIR)/debian/build-docs; \
