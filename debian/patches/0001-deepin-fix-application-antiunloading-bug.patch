@@ -1,0 +1,42 @@
+From d13a74ff04035332dc670c0c3ecd6ef8507627c4 Mon Sep 17 00:00:00 2001
+From: xyr218 <xiongyingrong@uniontech.com>
+Date: Fri, 8 Nov 2024 10:31:46 +0800
+Subject: [PATCH] deepin-fix-application-antiunloading-bug
+
+---
+ policy/modules/services/deepin_perm_control.te | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/policy/modules/services/deepin_perm_control.te b/policy/modules/services/deepin_perm_control.te
+index ec485b7..29447fe 100644
+--- a/policy/modules/services/deepin_perm_control.te
++++ b/policy/modules/services/deepin_perm_control.te
+@@ -380,6 +380,7 @@ allow deepin_executable_file_type deepin_deletable_file_type:filesystem { mount
+ 
+ allow deepin_executable_file_type deepin_executable_file_type:dir { list_dir_perms link };
+ allow deepin_executable_file_type deepin_executable_file_type:file { exec_file_perms link execmod };
++allow deepin_executable_file_type deepin_executable_file_type:lnk_file { read_lnk_file_perms };
+ allow deepin_executable_file_type deepin_executable_file_type:dbus send_msg;
+ allow deepin_executable_file_type deepin_executable_file_type:process ~{ setcurrent setexec transition dyntransition setfscreate setsockcreate setkeycreate sigkill sigstop signal };
+ allow deepin_executable_file_type deepin_executable_file_type:fd use;
+@@ -432,7 +433,7 @@ allow deepin_app_domain deepin_executable_file_type:key_socket ~{ relabelfrom re
+ allow deepin_app_domain deepin_executable_file_type:{ sem msg msgq shm ipc } *;
+ allow deepin_app_domain deepin_executable_file_type:socket_class_set ~{ relabelfrom relabelto };
+ allow deepin_app_domain deepin_app_domain:dir list_dir_perms;
+-allow deepin_app_domain { deepin_executable_file_type -deepin_executable_file_type }:{ file lnk_file } ~{ relabelfrom relabelto };
++
+ 
+ allow deepin_app_domain port_type:{ tcp_socket udp_socket rawip_socket sctp_socket } ~{ relabelfrom relabelto };
+ allow deepin_app_domain packet_type:packet *;
+@@ -863,6 +864,6 @@ allow deepin_executable_file_type deepin_home_sec_t:dir list_dir_perms;
+ require {       
+     class filesystem unmount;     
+ }
+-type deepin_immutable_t;  
++type deepin_immutable_t, deepin_security_server_domain; 
+ deepin_app_domain_set(deepin_immutable_t);
+ allow deepin_immutable_t deepin_ro_file_t:filesystem { unmount };
+\ No newline at end of file
+-- 
+2.20.1
+
