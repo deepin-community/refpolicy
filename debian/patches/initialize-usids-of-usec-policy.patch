@@ -59,10 +59,10 @@ Subject: [PATCH] initialize usids of usec policy
  create mode 100644 config/appconfig-usec/xguest_u_default_contexts
  create mode 100644 policy/flask/initial_usids
 
-diff --git a/Makefile b/Makefile
-index cd0573d..da93f8a 100644
---- a/Makefile
-+++ b/Makefile
+Index: refpolicy/Makefile
+===================================================================
+--- refpolicy.orig/Makefile
++++ refpolicy/Makefile
 @@ -94,7 +94,11 @@ poldir := policy
  moddir := $(poldir)/modules
  flaskdir := $(poldir)/flask
@@ -75,26 +75,25 @@ index cd0573d..da93f8a 100644
  avs := $(flaskdir)/access_vectors
  
  # local source layout
-@@ -200,6 +204,14 @@ ifeq "$(TYPE)" "mcs"
+@@ -198,6 +202,14 @@ ifeq "$(TYPE)" "mcs"
+ 	override CHECKPOLICY += -M
+ 	override CHECKMODULE += -M
  	gennetfilter += -c
- endif
- 
++endif
++
 +# enable USEC if requested.
 +ifeq "$(TYPE)" "usec"
 +	M4PARAM += -D enable_mcs=true -D enable_usec=true
 +	override CHECKPOLICY += -M
 +	override CHECKMODULE += -M
 +	gennetfilter += -c
-+endif
-+
+ endif
+ 
  # enable distribution-specific policy
- ifneq ($(DISTRO),)
- 	M4PARAM += -D distro_$(DISTRO)=true
-diff --git a/config/appconfig-usec/dbus_contexts b/config/appconfig-usec/dbus_contexts
-new file mode 100644
-index 0000000..116e684
+Index: refpolicy/config/appconfig-usec/dbus_contexts
+===================================================================
 --- /dev/null
-+++ b/config/appconfig-usec/dbus_contexts
++++ refpolicy/config/appconfig-usec/dbus_contexts
 @@ -0,0 +1,6 @@
 +<!DOCTYPE busconfig PUBLIC "-//freedesktop//DTD D-BUS Bus Configuration 1.0//EN"
 + "http://www.freedesktop.org/standards/dbus/1.0/busconfig.dtd">
@@ -102,11 +101,10 @@ index 0000000..116e684
 +  <selinux>
 +  </selinux>
 +</busconfig>
-diff --git a/config/appconfig-usec/default_contexts b/config/appconfig-usec/default_contexts
-new file mode 100644
-index 0000000..166a74f
+Index: refpolicy/config/appconfig-usec/default_contexts
+===================================================================
 --- /dev/null
-+++ b/config/appconfig-usec/default_contexts
++++ refpolicy/config/appconfig-usec/default_contexts
 @@ -0,0 +1,16 @@
 +system_r:crond_t:s0		user_r:user_t:s0 staff_r:staff_t:s0 sysadm_r:sysadm_t:s0 unconfined_r:unconfined_t:s0 user_r:cronjob_t:s0 staff_r:cronjob_t:s0 sysadm_r:cronjob_t:s0 system_r:system_cronjob_t:s0 unconfined_r:unconfined_cronjob_t:s0
 +system_r:init_t:s0		user_r:user_systemd_t:s0 staff_r:staff_systemd_t:s0 sysadm_r:sysadm_systemd_t:s0 unconfined_r:unconfined_t:s0
@@ -124,11 +122,10 @@ index 0000000..166a74f
 +
 +user_r:user_su_t:s0		user_r:user_t:s0 staff_r:staff_t:s0 sysadm_r:sysadm_t:s0
 +user_r:user_sudo_t:s0		sysadm_r:sysadm_t:s0 user_r:user_t:s0
-diff --git a/config/appconfig-usec/default_type b/config/appconfig-usec/default_type
-new file mode 100644
-index 0000000..33528d6
+Index: refpolicy/config/appconfig-usec/default_type
+===================================================================
 --- /dev/null
-+++ b/config/appconfig-usec/default_type
++++ refpolicy/config/appconfig-usec/default_type
 @@ -0,0 +1,6 @@
 +auditadm_r:auditadm_t
 +secadm_r:secadm_t
@@ -136,18 +133,16 @@ index 0000000..33528d6
 +staff_r:staff_t
 +unconfined_r:unconfined_t
 +user_r:user_t
-diff --git a/config/appconfig-usec/failsafe_context b/config/appconfig-usec/failsafe_context
-new file mode 100644
-index 0000000..999abd9
+Index: refpolicy/config/appconfig-usec/failsafe_context
+===================================================================
 --- /dev/null
-+++ b/config/appconfig-usec/failsafe_context
++++ refpolicy/config/appconfig-usec/failsafe_context
 @@ -0,0 +1 @@
 +sysadm_r:sysadm_t:s0
-diff --git a/config/appconfig-usec/guest_u_default_contexts b/config/appconfig-usec/guest_u_default_contexts
-new file mode 100644
-index 0000000..90e5262
+Index: refpolicy/config/appconfig-usec/guest_u_default_contexts
+===================================================================
 --- /dev/null
-+++ b/config/appconfig-usec/guest_u_default_contexts
++++ refpolicy/config/appconfig-usec/guest_u_default_contexts
 @@ -0,0 +1,6 @@
 +guest_r:guest_t:s0		guest_r:guest_t:s0
 +system_r:crond_t:s0		guest_r:guest_t:s0
@@ -155,52 +150,46 @@ index 0000000..90e5262
 +system_r:local_login_t:s0	guest_r:guest_t:s0
 +system_r:remote_login_t:s0	guest_r:guest_t:s0
 +system_r:sshd_t:s0		guest_r:guest_t:s0
-diff --git a/config/appconfig-usec/initrc_context b/config/appconfig-usec/initrc_context
-new file mode 100644
-index 0000000..30ab971
+Index: refpolicy/config/appconfig-usec/initrc_context
+===================================================================
 --- /dev/null
-+++ b/config/appconfig-usec/initrc_context
++++ refpolicy/config/appconfig-usec/initrc_context
 @@ -0,0 +1 @@
 +system_u:system_r:initrc_t:s0
-diff --git a/config/appconfig-usec/lxc_contexts b/config/appconfig-usec/lxc_contexts
-new file mode 100644
-index 0000000..de397ed
+Index: refpolicy/config/appconfig-usec/lxc_contexts
+===================================================================
 --- /dev/null
-+++ b/config/appconfig-usec/lxc_contexts
++++ refpolicy/config/appconfig-usec/lxc_contexts
 @@ -0,0 +1,5 @@
 +process = "system_u:system_r:container_t:s0"
 +content = "system_u:object_r:virt_var_lib_t:s0"
 +file = "system_u:object_r:container_file_t:s0"
 +ro_file = "system_u:object_r:container_ro_file_t:s0"
 +sandbox_lxc_process = "system_u:system_r:container_t:s0"
-diff --git a/config/appconfig-usec/media b/config/appconfig-usec/media
-new file mode 100644
-index 0000000..81f3463
+Index: refpolicy/config/appconfig-usec/media
+===================================================================
 --- /dev/null
-+++ b/config/appconfig-usec/media
++++ refpolicy/config/appconfig-usec/media
 @@ -0,0 +1,3 @@
 +cdrom system_u:object_r:removable_device_t:s0
 +floppy system_u:object_r:removable_device_t:s0
 +disk system_u:object_r:fixed_disk_device_t:s0
-diff --git a/config/appconfig-usec/openrc_contexts b/config/appconfig-usec/openrc_contexts
-new file mode 100644
-index 0000000..72f1894
+Index: refpolicy/config/appconfig-usec/openrc_contexts
+===================================================================
 --- /dev/null
-+++ b/config/appconfig-usec/openrc_contexts
++++ refpolicy/config/appconfig-usec/openrc_contexts
 @@ -0,0 +1 @@
 +run_init=run_init_t
-diff --git a/config/appconfig-usec/removable_context b/config/appconfig-usec/removable_context
-new file mode 100644
-index 0000000..7fcc56e
+Index: refpolicy/config/appconfig-usec/removable_context
+===================================================================
 --- /dev/null
-+++ b/config/appconfig-usec/removable_context
++++ refpolicy/config/appconfig-usec/removable_context
 @@ -0,0 +1 @@
 +system_u:object_r:removable_t:s0
-diff --git a/config/appconfig-usec/root_default_contexts b/config/appconfig-usec/root_default_contexts
-new file mode 100644
-index 0000000..498b429
+Index: refpolicy/config/appconfig-usec/root_default_contexts
+===================================================================
 --- /dev/null
-+++ b/config/appconfig-usec/root_default_contexts
++++ refpolicy/config/appconfig-usec/root_default_contexts
 @@ -0,0 +1,12 @@
 +system_r:crond_t:s0		unconfined_r:unconfined_t:s0 sysadm_r:cronjob_t:s0 staff_r:cronjob_t:s0 user_r:cronjob_t:s0
 +system_r:init_t:s0		unconfined_r:unconfined_t:s0 sysadm_r:sysadm_systemd_t:s0 staff_r:staff_systemd_t:s0 user_r:user_systemd_t:s0
@@ -214,18 +203,16 @@ index 0000000..498b429
 +# Uncomment if you want to automatically login as sysadm_r
 +#
 +#system_r:sshd_t:s0		unconfined_r:unconfined_t:s0 sysadm_r:sysadm_t:s0 staff_r:staff_t:s0 user_r:user_t:s0
-diff --git a/config/appconfig-usec/securetty_types b/config/appconfig-usec/securetty_types
-new file mode 100644
-index 0000000..527d835
+Index: refpolicy/config/appconfig-usec/securetty_types
+===================================================================
 --- /dev/null
-+++ b/config/appconfig-usec/securetty_types
++++ refpolicy/config/appconfig-usec/securetty_types
 @@ -0,0 +1 @@
 +user_tty_device_t
-diff --git a/config/appconfig-usec/sepgsql_contexts b/config/appconfig-usec/sepgsql_contexts
-new file mode 100644
-index 0000000..f8e9b1c
+Index: refpolicy/config/appconfig-usec/sepgsql_contexts
+===================================================================
 --- /dev/null
-+++ b/config/appconfig-usec/sepgsql_contexts
++++ refpolicy/config/appconfig-usec/sepgsql_contexts
 @@ -0,0 +1,40 @@
 +#
 +# Initial security label for SE-PostgreSQL (MCS)
@@ -267,19 +254,17 @@ index 0000000..f8e9b1c
 +db_language	*.pltcl			system_u:object_r:sepgsql_safe_lang_t:s0
 +db_language	*.plperl		system_u:object_r:sepgsql_safe_lang_t:s0
 +db_language	*.*			system_u:object_r:sepgsql_lang_t:s0
-diff --git a/config/appconfig-usec/seusers b/config/appconfig-usec/seusers
-new file mode 100644
-index 0000000..5fbab95
+Index: refpolicy/config/appconfig-usec/seusers
+===================================================================
 --- /dev/null
-+++ b/config/appconfig-usec/seusers
++++ refpolicy/config/appconfig-usec/seusers
 @@ -0,0 +1,2 @@
 +root:unconfined_u:s0-mcs_systemhigh
 +__default__:unconfined_u:s0-mcs_systemhigh
-diff --git a/config/appconfig-usec/staff_u_default_contexts b/config/appconfig-usec/staff_u_default_contexts
-new file mode 100644
-index 0000000..15d6a95
+Index: refpolicy/config/appconfig-usec/staff_u_default_contexts
+===================================================================
 --- /dev/null
-+++ b/config/appconfig-usec/staff_u_default_contexts
++++ refpolicy/config/appconfig-usec/staff_u_default_contexts
 @@ -0,0 +1,10 @@
 +system_r:init_t:s0		staff_r:staff_systemd_t:s0 sysadm_r:sysadm_systemd_t:s0
 +system_r:local_login_t:s0	staff_r:staff_t:s0 sysadm_r:sysadm_t:s0
@@ -291,11 +276,10 @@ index 0000000..15d6a95
 +staff_r:staff_sudo_t:s0		staff_r:staff_t:s0
 +sysadm_r:sysadm_su_t:s0		sysadm_r:sysadm_t:s0
 +sysadm_r:sysadm_sudo_t:s0	sysadm_r:sysadm_t:s0
-diff --git a/config/appconfig-usec/unconfined_u_default_contexts b/config/appconfig-usec/unconfined_u_default_contexts
-new file mode 100644
-index 0000000..96c5e13
+Index: refpolicy/config/appconfig-usec/unconfined_u_default_contexts
+===================================================================
 --- /dev/null
-+++ b/config/appconfig-usec/unconfined_u_default_contexts
++++ refpolicy/config/appconfig-usec/unconfined_u_default_contexts
 @@ -0,0 +1,10 @@
 +system_r:crond_t:s0		unconfined_r:unconfined_t:s0 unconfined_r:unconfined_cronjob_t:s0
 +system_r:init_t:s0		unconfined_r:unconfined_t:s0
@@ -307,11 +291,10 @@ index 0000000..96c5e13
 +system_r:sysadm_su_t:s0		unconfined_r:unconfined_t:s0
 +system_r:unconfined_t:s0	unconfined_r:unconfined_t:s0
 +system_r:xdm_t:s0		unconfined_r:unconfined_t:s0
-diff --git a/config/appconfig-usec/user_u_default_contexts b/config/appconfig-usec/user_u_default_contexts
-new file mode 100644
-index 0000000..975222b
+Index: refpolicy/config/appconfig-usec/user_u_default_contexts
+===================================================================
 --- /dev/null
-+++ b/config/appconfig-usec/user_u_default_contexts
++++ refpolicy/config/appconfig-usec/user_u_default_contexts
 @@ -0,0 +1,8 @@
 +system_r:init_t:s0		user_r:user_systemd_t:s0
 +system_r:local_login_t:s0	user_r:user_t:s0
@@ -321,33 +304,29 @@ index 0000000..975222b
 +system_r:xdm_t:s0		user_r:user_t:s0
 +user_r:user_su_t:s0		user_r:user_t:s0
 +user_r:user_sudo_t:s0		user_r:user_t:s0
-diff --git a/config/appconfig-usec/userhelper_context b/config/appconfig-usec/userhelper_context
-new file mode 100644
-index 0000000..dc37a69
+Index: refpolicy/config/appconfig-usec/userhelper_context
+===================================================================
 --- /dev/null
-+++ b/config/appconfig-usec/userhelper_context
++++ refpolicy/config/appconfig-usec/userhelper_context
 @@ -0,0 +1 @@
 +system_u:sysadm_r:sysadm_t:s0
-diff --git a/config/appconfig-usec/virtual_domain_context b/config/appconfig-usec/virtual_domain_context
-new file mode 100644
-index 0000000..d387b42
+Index: refpolicy/config/appconfig-usec/virtual_domain_context
+===================================================================
 --- /dev/null
-+++ b/config/appconfig-usec/virtual_domain_context
++++ refpolicy/config/appconfig-usec/virtual_domain_context
 @@ -0,0 +1 @@
 +system_u:system_r:svirt_t:s0
-diff --git a/config/appconfig-usec/virtual_image_context b/config/appconfig-usec/virtual_image_context
-new file mode 100644
-index 0000000..8ab1e27
+Index: refpolicy/config/appconfig-usec/virtual_image_context
+===================================================================
 --- /dev/null
-+++ b/config/appconfig-usec/virtual_image_context
++++ refpolicy/config/appconfig-usec/virtual_image_context
 @@ -0,0 +1,2 @@
 +system_u:object_r:svirt_image_t:s0
 +system_u:object_r:virt_content_t:s0
-diff --git a/config/appconfig-usec/x_contexts b/config/appconfig-usec/x_contexts
-new file mode 100644
-index 0000000..0b32044
+Index: refpolicy/config/appconfig-usec/x_contexts
+===================================================================
 --- /dev/null
-+++ b/config/appconfig-usec/x_contexts
++++ refpolicy/config/appconfig-usec/x_contexts
 @@ -0,0 +1,105 @@
 +#
 +# Config file for XSELinux extension
@@ -454,19 +433,17 @@ index 0000000..0b32044
 +
 +# Default fallback type
 +event *					system_u:object_r:xevent_t:s0
-diff --git a/config/appconfig-usec/xdm_default_contexts b/config/appconfig-usec/xdm_default_contexts
-new file mode 100644
-index 0000000..d35bb24
+Index: refpolicy/config/appconfig-usec/xdm_default_contexts
+===================================================================
 --- /dev/null
-+++ b/config/appconfig-usec/xdm_default_contexts
++++ refpolicy/config/appconfig-usec/xdm_default_contexts
 @@ -0,0 +1,2 @@
 +system_r:xdm_t:s0		xdm_r:xdm_t:s0
 +system_r:init_t:s0		xdm_r:xdm_t:s0
-diff --git a/config/appconfig-usec/xguest_u_default_contexts b/config/appconfig-usec/xguest_u_default_contexts
-new file mode 100644
-index 0000000..574363b
+Index: refpolicy/config/appconfig-usec/xguest_u_default_contexts
+===================================================================
 --- /dev/null
-+++ b/config/appconfig-usec/xguest_u_default_contexts
++++ refpolicy/config/appconfig-usec/xguest_u_default_contexts
 @@ -0,0 +1,7 @@
 +system_r:crond_t:s0		xguest_r:xguest_t:s0
 +system_r:initrc_su_t:s0		xguest_r:xguest_t:s0
@@ -475,11 +452,10 @@ index 0000000..574363b
 +system_r:sshd_t:s0		xguest_r:xguest_t:s0
 +system_r:xdm_t:s0		xguest_r:xguest_t:s0
 +xguest_r:xguest_t:s0		xguest_r:xguest_t:s0
-diff --git a/policy/flask/initial_usids b/policy/flask/initial_usids
-new file mode 100644
-index 0000000..3ccbaa7
+Index: refpolicy/policy/flask/initial_usids
+===================================================================
 --- /dev/null
-+++ b/policy/flask/initial_usids
++++ refpolicy/policy/flask/initial_usids
 @@ -0,0 +1,37 @@
 +# FLASK
 +
@@ -518,10 +494,10 @@ index 0000000..3ccbaa7
 +sid devnull
 +
 +# FLASK
-diff --git a/policy/modules/kernel/domain.te b/policy/modules/kernel/domain.te
-index 0211767..d58d243 100644
---- a/policy/modules/kernel/domain.te
-+++ b/policy/modules/kernel/domain.te
+Index: refpolicy/policy/modules/kernel/domain.te
+===================================================================
+--- refpolicy.orig/policy/modules/kernel/domain.te
++++ refpolicy/policy/modules/kernel/domain.te
 @@ -13,6 +13,11 @@ policy_module(domain)
  ## </desc>
  gen_tunable(mmap_low_allowed, false)
@@ -534,10 +510,10 @@ index 0211767..d58d243 100644
  # Mark process types as domains
  attribute domain;
  
-diff --git a/policy/modules/kernel/filesystem.te b/policy/modules/kernel/filesystem.te
-index 0384086..05da4b1 100644
---- a/policy/modules/kernel/filesystem.te
-+++ b/policy/modules/kernel/filesystem.te
+Index: refpolicy/policy/modules/kernel/filesystem.te
+===================================================================
+--- refpolicy.orig/policy/modules/kernel/filesystem.te
++++ refpolicy/policy/modules/kernel/filesystem.te
 @@ -21,6 +21,11 @@ type fs_t;
  fs_xattr_type(fs_t)
  sid fs gen_context(system_u:object_r:fs_t,s0)
@@ -550,10 +526,10 @@ index 0384086..05da4b1 100644
  # Use xattrs for the following filesystem types.
  # Requires that a security xattr handler exist for the filesystem.
  fs_use_xattr btrfs gen_context(system_u:object_r:fs_t,s0);
-diff --git a/policy/modules/services/deepin_perm_control.te b/policy/modules/services/deepin_perm_control.te
-index 29447fe..332b02a 100644
---- a/policy/modules/services/deepin_perm_control.te
-+++ b/policy/modules/services/deepin_perm_control.te
+Index: refpolicy/policy/modules/services/deepin_perm_control.te
+===================================================================
+--- refpolicy.orig/policy/modules/services/deepin_perm_control.te
++++ refpolicy/policy/modules/services/deepin_perm_control.te
 @@ -141,9 +141,6 @@ require {
  	type deepin_elf_verify_t;
  }
@@ -613,7 +589,16 @@ index 29447fe..332b02a 100644
  	allow sysadm_t deepin_perm_manager_unit_t:service *;
  	allow sysadm_sudo_t deepin_perm_manager_unit_t:service *;
  	deepin_perm_manager_domtrans(sysadm_t)
-@@ -860,10 +867,14 @@ allow deepin_home_sec_t self:filesystem associate;
+@@ -391,7 +398,7 @@ allow deepin_executable_file_type deepin
+ allow deepin_executable_file_type deepin_executable_file_type:socket_class_set ~{ relabelfrom relabelto };
+ allow deepin_executable_file_type deepin_executable_file_type:dir_file_class_set { mounton lock };
+ allow deepin_executable_file_type deepin_executable_file_type:filesystem { mount remount };
+-allow deepin_executable_file_type deepin_executable_file_type:service ~{ stop reload };
++allow deepin_executable_file_type deepin_executable_file_type:service ~{ stop reload disable };
+ 
+ allow deepin_executable_file_type self:file { exec_file_perms link execmod };
+ 
+@@ -860,10 +867,14 @@ allow deepin_home_sec_t self:filesystem
  allow deepin_executable_file_type deepin_home_sec_t:file ~{ relabelfrom relabelto };
  allow deepin_executable_file_type deepin_home_sec_t:dir list_dir_perms;
  
@@ -636,10 +621,10 @@ index 29447fe..332b02a 100644
 +	deepin_app_domain_set(deepin_immutable_t);
 +	allow deepin_immutable_t usec_immutable_fs_t:filesystem { unmount };
 +')
-diff --git a/support/Makefile.devel b/support/Makefile.devel
-index 416c9e0..f804f9e 100644
---- a/support/Makefile.devel
-+++ b/support/Makefile.devel
+Index: refpolicy/support/Makefile.devel
+===================================================================
+--- refpolicy.orig/support/Makefile.devel
++++ refpolicy/support/Makefile.devel
 @@ -53,6 +53,13 @@ ifeq "$(TYPE)" "mcs"
  	CHECKMODULE += -M
  endif
@@ -654,6 +639,3 @@ index 416c9e0..f804f9e 100644
  # enable distribution-specific policy
  ifneq ($(DISTRO),)
  	M4PARAM += -D distro_$(DISTRO)
--- 
-2.20.1
-

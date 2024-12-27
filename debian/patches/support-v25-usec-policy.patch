@@ -4691,7 +4691,7 @@ Index: refpolicy-deepin/policy/modules/services/deepin_perm_control.if
 +interface(`deepin_process_unkillable',`
 +	gen_require(`
 +		attribute deepin_executable_file_type;
-+		class service { stop reload };
++		class service { stop reload disable };
 +	')
 +
 +	## <desc>
@@ -4703,7 +4703,7 @@ Index: refpolicy-deepin/policy/modules/services/deepin_perm_control.if
 +
 +	tunable_policy(`! allow_$1_be_unkillable',`
 +		allow deepin_executable_file_type $1_t:process { sigkill sigstop signal };
-+		allow deepin_executable_file_type $1_t:service { stop reload };
++		allow deepin_executable_file_type $1_t:service { stop reload disable };
 +	')
 +')
 +
