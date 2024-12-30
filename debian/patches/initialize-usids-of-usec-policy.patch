@@ -598,7 +598,7 @@ Index: refpolicy/policy/modules/services/deepin_perm_control.te
  
  allow deepin_executable_file_type self:file { exec_file_perms link execmod };
  
-@@ -860,10 +867,14 @@ allow deepin_home_sec_t self:filesystem
+@@ -860,10 +867,31 @@ allow deepin_home_sec_t self:filesystem
  allow deepin_executable_file_type deepin_home_sec_t:file ~{ relabelfrom relabelto };
  allow deepin_executable_file_type deepin_home_sec_t:dir list_dir_perms;
  
@@ -610,17 +610,35 @@ Index: refpolicy/policy/modules/services/deepin_perm_control.te
 -deepin_app_domain_set(deepin_immutable_t);
 -allow deepin_immutable_t deepin_ro_file_t:filesystem { unmount };
 \ No newline at end of file
-+
 +ifdef(`enable_usec',`
 +	# umount管控
 +	require {
 +		class filesystem unmount;
 +		type usec_immutable_fs_t;
++		type deepin_perm_manager_sidtwo_t;
++		class file execute;
 +	}
 +	type deepin_immutable_t, deepin_security_server_domain;
 +	deepin_app_domain_set(deepin_immutable_t);
 +	allow deepin_immutable_t usec_immutable_fs_t:filesystem { unmount };
++
++	type_transition deepin_immutable_t deepin_usec_t:process deepin_immutable_t;
++	allow deepin_perm_manager_sidtwo_t usec_immutable_fs_t:filesystem { unmount };
 +')
++
++# 系统核心进程防杀标签
++ifdef(`enable_usec',`
++	require {
++		attribute deepin_executable_file_type;
++	}
++
++	type deepin_unkillable_t;
++	corecmd_executable_file(deepin_unkillable_t)
++	allow deepin_unkillable_t deepin_unkillable_t:process { sigkill sigstop };
++	allow deepin_unkillable_t deepin_unkillable_t:service { stop reload disable };
++	allow deepin_executable_file_type deepin_unkillable_t:process ~{ sigkill sigstop };
++')
+\ No newline at end of file
 Index: refpolicy/support/Makefile.devel
 ===================================================================
 --- refpolicy.orig/support/Makefile.devel
