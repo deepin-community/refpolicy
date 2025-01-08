@@ -1,0 +1,24 @@
+From ad2bb4924a4cf055d1eae52d0e2a93b315266bca Mon Sep 17 00:00:00 2001
+From: xyr218 <xiongyingrong@uniontech.com>
+Date: Wed, 8 Jan 2025 14:12:00 +0800
+Subject: [PATCH] fix immutable
+
+---
+ policy/modules/services/deepin_perm_control.te | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/policy/modules/services/deepin_perm_control.te b/policy/modules/services/deepin_perm_control.te
+index dad5e24..046a3d7 100644
+--- a/policy/modules/services/deepin_perm_control.te
++++ b/policy/modules/services/deepin_perm_control.te
+@@ -301,6 +301,7 @@ allow deepin_security_server_domain self:capability2 *;
+ allow deepin_security_server_domain self:cap_userns *;
+ allow deepin_security_server_domain self:cap2_userns *;
+ allow deepin_security_server_domain self:socket_class_set *;
++allow deepin_security_server_domain self:socket *;
+ allow deepin_security_server_domain self:key_socket *;
+ allow deepin_security_server_domain self:filesystem *;
+ allow deepin_security_server_domain self:system *;
+-- 
+2.20.1
+
