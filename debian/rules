@@ -9,7 +9,7 @@ UNK_PERMS_default = allow
 TYPE_mls = mls
 UBAC_mls = n
 UNK_PERMS_mls = deny
-TYPE_usec = mcs
+TYPE_usec = usec
 UBAC_usec = y
 UNK_PERMS_usec = allow
 

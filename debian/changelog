@@ -1,3 +1,24 @@
+refpolicy (2:2.20240723-2deepin7) unstable; urgency=medium
+
+  * fix: 添加系统核心进程防杀标签deepin_unkillable_t
+  *      deepin-immutable-ctl调用umount被拦截
+
+ -- zhangya <zhangya@uniontech.com>  Mon, 30 Dec 2024 10:08:02 +0800
+
+refpolicy (2:2.20240723-2deepin6) unstable; urgency=medium
+
+  * fix: 包防殺後, 可以通過systemctl disable取消服務自啓
+
+ -- zhangya <zhangya@uniontech.com>  Tue, 10 Dec 2024 20:58:02 +0800
+
+refpolicy (2:2.20240723-2deepin5) unstable; urgency=medium
+
+  * add flash/initial_usids for USEC.
+  * initialize usids of USEC policy. add usec_immutable_fs and deepin_usec
+    sid.
+
+ -- zhouzilong <zhouzilong@uniontech.com>  Thu, 05 Dec 2024 21:04:18 +0800
+
 refpolicy (2:2.20240723-2deepin4) unstable; urgency=medium
 
   * fix application anti-unloading bug.

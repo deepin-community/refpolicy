@@ -19,3 +19,4 @@ thunderbolt
 support-v25-usec-policy.patch
 0001-deepin-umount-control.patch
 0001-deepin-fix-application-antiunloading-bug.patch
+initialize-usids-of-usec-policy.patch
