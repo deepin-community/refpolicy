@@ -1,3 +1,10 @@
+refpolicy (2:2.20240723-2deepin8) unstable; urgency=medium
+
+  * fix:修复immutable标签在开启网络管控后不可访问网络的问题.
+  *
+
+ -- xiongyingrong <xiongyingrong@uniontech.com>  Wed, 08 Jan 2025 14:17:49 +0800
+
 refpolicy (2:2.20240723-2deepin7) unstable; urgency=medium
 
   * fix: 添加系统核心进程防杀标签deepin_unkillable_t
