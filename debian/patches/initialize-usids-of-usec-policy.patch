@@ -530,7 +530,7 @@ Index: refpolicy/policy/modules/services/deepin_perm_control.te
 ===================================================================
 --- refpolicy.orig/policy/modules/services/deepin_perm_control.te
 +++ refpolicy/policy/modules/services/deepin_perm_control.te
-@@ -141,9 +141,6 @@ require {
+@@ -141,10 +141,8 @@ require {
  	type deepin_elf_verify_t;
  }
  
@@ -538,9 +538,11 @@ Index: refpolicy/policy/modules/services/deepin_perm_control.te
 -type deepin_usec_t;
 -deepin_app_domain_set(deepin_usec_t)
  deepin_app_domain_set(kernel_t)
++deepin_app_domain_set(init_t)
  
  # for app to read selinux config
-@@ -246,25 +243,35 @@ type deepin_perm_manager_test_exec_t;
+ selinux_read_policy(deepin_app_domain)
+@@ -246,25 +244,35 @@ type deepin_perm_manager_test_exec_t;
  domain_entry_file(sysadm_t, deepin_perm_manager_test_exec_t)
  domtrans_pattern(deepin_perm_manager_t, deepin_perm_manager_test_exec_t, sysadm_t)
  
@@ -589,7 +591,7 @@ Index: refpolicy/policy/modules/services/deepin_perm_control.te
  	allow sysadm_t deepin_perm_manager_unit_t:service *;
  	allow sysadm_sudo_t deepin_perm_manager_unit_t:service *;
  	deepin_perm_manager_domtrans(sysadm_t)
-@@ -391,7 +398,7 @@ allow deepin_executable_file_type deepin
+@@ -391,7 +399,7 @@ allow deepin_executable_file_type deepin
  allow deepin_executable_file_type deepin_executable_file_type:socket_class_set ~{ relabelfrom relabelto };
  allow deepin_executable_file_type deepin_executable_file_type:dir_file_class_set { mounton lock };
  allow deepin_executable_file_type deepin_executable_file_type:filesystem { mount remount };
@@ -598,7 +600,7 @@ Index: refpolicy/policy/modules/services/deepin_perm_control.te
  
  allow deepin_executable_file_type self:file { exec_file_perms link execmod };
  
-@@ -860,10 +867,32 @@ allow deepin_home_sec_t self:filesystem
+@@ -860,10 +868,31 @@ allow deepin_home_sec_t self:filesystem
  allow deepin_executable_file_type deepin_home_sec_t:file ~{ relabelfrom relabelto };
  allow deepin_executable_file_type deepin_home_sec_t:dir list_dir_perms;
  
@@ -629,15 +631,14 @@ Index: refpolicy/policy/modules/services/deepin_perm_control.te
 +# 系统核心进程防杀标签
 +ifdef(`enable_usec',`
 +	require {
-+		type deepin_perm_manager_sidtwo_t;
++		attribute deepin_executable_file_type;
 +	}
 +
 +	type deepin_unkillable_t;
-+	corecmd_executable_file(deepin_unkillable_t)
-+	allow deepin_unkillable_t deepin_unkillable_t:process { sigkill sigstop };
-+	allow deepin_unkillable_t deepin_unkillable_t:service { stop reload disable };
-+	allow deepin_perm_manager_sidtwo_t deepin_unkillable_t:process { sigkill sigstop };
-+	allow deepin_perm_manager_sidtwo_t deepin_unkillable_t:service { stop reload disable };
++	deepin_app_domain_set(deepin_unkillable_t);
++	allow deepin_unkillable_t self:service *;
++	allow deepin_usec_t deepin_unkillable_t:process ~{ setcurrent setexec sigkill sigstop };
++	allow deepin_usec_t deepin_unkillable_t:service ~{ stop reload disable };
 +')
 \ No newline at end of file
 Index: refpolicy/support/Makefile.devel
