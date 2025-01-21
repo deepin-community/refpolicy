@@ -1,7 +1,12 @@
+refpolicy (2:2.20240723-2deepin9) unstable; urgency=medium
+
+  * fix:核心进程防杀 修复无法kill SIGHUP信号给deepin_unkillable_t进程.
+
+ -- zhangya <zhangya@uniontech.com>  Tue, 21 Jan 2025 17:47:49 +0800
+
 refpolicy (2:2.20240723-2deepin8) unstable; urgency=medium
 
   * fix:修复immutable标签在开启网络管控后不可访问网络的问题.
-  *
 
  -- xiongyingrong <xiongyingrong@uniontech.com>  Wed, 08 Jan 2025 14:17:49 +0800
 
