@@ -1,3 +1,10 @@
+refpolicy (2:2.20240723-2deepin10) unstable; urgency=medium
+
+  * fix:禁止对deepin_unkillable_t 进程kill任何信号
+        修复防杀进程deepin_unkillable_t 仍可以通过kill SIGTERM杀进程
+
+ -- zhangya <zhangya@uniontech.com>  Tue, 18 Feb 2025 09:47:49 +0800
+
 refpolicy (2:2.20240723-2deepin9) unstable; urgency=medium
 
   * fix:核心进程防杀 修复无法kill SIGHUP信号给deepin_unkillable_t进程.
