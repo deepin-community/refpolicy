@@ -637,7 +637,7 @@ Index: refpolicy/policy/modules/services/deepin_perm_control.te
 +	type deepin_unkillable_t;
 +	deepin_app_domain_set(deepin_unkillable_t);
 +	allow deepin_unkillable_t self:service *;
-+	allow deepin_usec_t deepin_unkillable_t:process ~{ setcurrent setexec sigkill sigstop };
++	allow deepin_usec_t deepin_unkillable_t:process ~{ setcurrent setexec sigkill signal sigstop };
 +	allow deepin_usec_t deepin_unkillable_t:service ~{ stop reload disable };
 +')
 \ No newline at end of file
