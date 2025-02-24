@@ -64,7 +64,12 @@ case "$platform" in
   ;;
 esac
 
-. /etc/selinux/config
+if [ "${flavour}" = "usec" ];then
+	config_name=usecconfig
+else
+	config_name=config
+fi
+. /etc/selinux/$config_name
 
 case "$1" in
     configure)
@@ -112,8 +117,10 @@ case "$1" in
 
 	# Now load policy into the kernel if it is the configured policy
 	# and we are running selinux
-	if [ "${SELINUXTYPE}" != "${flavour}" ] || ! selinuxenabled; then
-	    noreload='-n'
+	if [ "${flavour}" != "usec" ];then
+		if [ "${selinuxtype}" != "${flavour}" ] || ! selinuxenabled; then
+			noreload='-n'
+		fi
 	fi
 
 	ret=0

@@ -1,3 +1,10 @@
+refpolicy (2:2.20240723-2deepin11) unstable; urgency=medium
+
+  * fix: selinux-policy-usec postinstall failed
+         /etc/selinux/config not exist
+
+ -- zhangya <zhangya@uniontech.com>  Mon, 24 Feb 2025 11:42:49 +0800
+
 refpolicy (2:2.20240723-2deepin10) unstable; urgency=medium
 
   * fix:禁止对deepin_unkillable_t 进程kill任何信号
