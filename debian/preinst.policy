@@ -15,6 +15,21 @@ flavour="=FLAVOUR="
 config_name=config
 if [ "${flavour}" = "usec" ];then
     config_name=usecconfig
+    if [ ! -f /etc/selinux/$config_name ]; then
+        echo '# This file controls the state of USEC on the system.' >> /etc/selinux/$config_name
+        echo '# USECLINUX= can take one of these three values:' >> /etc/selinux/$config_name
+        echo '# enforcing - USEC security policy is enforced.' >> /etc/selinux/$config_name
+        echo '# permissive - USEC prints warnings instead of enforcing.' >> /etc/selinux/$config_name
+        echo '# disabled - No USEC policy is loaded.' >> /etc/selinux/$config_name
+        echo 'USECLINUX=enforcing' >> /etc/selinux/$config_name
+        echo '# USECLINUXTYPE= can take one of these two values:' >> /etc/selinux/$config_name
+        echo '# usec - uos basic access control policy' >> /etc/selinux/$config_name
+        echo '# default - equivalent to the old strict and targeted policies' >> /etc/selinux/$config_name
+        echo '# mls     - Multi-Level Security (for military and educational use)' >> /etc/selinux/$config_name
+        echo '# src     - Custom policy built from source' >> /etc/selinux/$config_name
+        echo 'USECLINUXTYPE=usec' >> /etc/selinux/$config_name
+        echo '' >> /etc/selinux/$config_name
+    fi
 fi
 
 case "$1" in
