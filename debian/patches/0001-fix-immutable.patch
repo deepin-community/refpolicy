@@ -7,11 +7,11 @@ Subject: [PATCH] fix immutable
  policy/modules/services/deepin_perm_control.te | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/policy/modules/services/deepin_perm_control.te b/policy/modules/services/deepin_perm_control.te
-index dad5e24..046a3d7 100644
---- a/policy/modules/services/deepin_perm_control.te
-+++ b/policy/modules/services/deepin_perm_control.te
-@@ -301,6 +301,7 @@ allow deepin_security_server_domain self:capability2 *;
+Index: refpolicy/policy/modules/services/deepin_perm_control.te
+===================================================================
+--- refpolicy.orig/policy/modules/services/deepin_perm_control.te
++++ refpolicy/policy/modules/services/deepin_perm_control.te
+@@ -302,6 +302,7 @@ allow deepin_security_server_domain self
  allow deepin_security_server_domain self:cap_userns *;
  allow deepin_security_server_domain self:cap2_userns *;
  allow deepin_security_server_domain self:socket_class_set *;
@@ -19,6 +19,24 @@ index dad5e24..046a3d7 100644
  allow deepin_security_server_domain self:key_socket *;
  allow deepin_security_server_domain self:filesystem *;
  allow deepin_security_server_domain self:system *;
--- 
-2.20.1
-
+@@ -871,17 +872,17 @@ allow deepin_executable_file_type deepin
+ ifdef(`enable_usec',`
+ 	# umount管控
+ 	require {
+-		class filesystem unmount;
++		class filesystem { unmount remount };
+ 		type usec_immutable_fs_t;
+ 		type deepin_perm_manager_sidtwo_t;
+ 		class file execute;
+ 	}
+ 	type deepin_immutable_t, deepin_security_server_domain;
+ 	deepin_app_domain_set(deepin_immutable_t);
+-	allow deepin_immutable_t usec_immutable_fs_t:filesystem { unmount };
++	allow deepin_immutable_t usec_immutable_fs_t:filesystem { unmount remount };
+ 
+ 	type_transition deepin_immutable_t deepin_usec_t:process deepin_immutable_t;
+-	allow deepin_perm_manager_sidtwo_t usec_immutable_fs_t:filesystem { unmount };
++	allow deepin_perm_manager_sidtwo_t usec_immutable_fs_t:filesystem { unmount remount };
+ ')
+ 
+ # 系统核心进程防杀标签

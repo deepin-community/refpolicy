@@ -1,3 +1,10 @@
+refpolicy (2:2.20240723-2deepin13) unstable; urgency=medium
+
+  * fix: usec: deepin_immutable_t can remount usec_immutable_fs_t
+               umount管控,允许磐石mount和remount usec_immutable_fs_t.
+
+ -- zhangya <zhangya@uniontech.com>  Thu, 20 Mar 2025 15:22:49 +0800
+
 refpolicy (2:2.20240723-2deepin12) unstable; urgency=medium
 
   * fix: selinux-policy-usec postinstall failed
