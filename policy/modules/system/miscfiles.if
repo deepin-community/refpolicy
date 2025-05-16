@@ -653,6 +653,7 @@ interface(`miscfiles_watch_localization',`
 		type locale_t;
 	')
 
+	allow $1 locale_t:dir watch;
 	allow $1 locale_t:file watch;
 ')
 

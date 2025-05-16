@@ -966,3 +966,21 @@ interface(`mls_dbus_recv_all_levels',`
 
 	typeattribute $1 mlsdbusrecv;
 ')
+
+########################################
+## <summary>
+##  This domain is exemption for MCS rules.
+## </summary>
+## <param name="domain">
+##  <summary>
+##  Domain target for user exemption.
+##  </summary>
+## </param>
+#
+interface(`domain_mls_exemption',`
+	gen_require(`
+		attribute mlsexemptiondomain;
+	')
+
+	typeattribute $1 mlsexemptiondomain;
+')

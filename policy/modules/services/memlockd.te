@@ -37,7 +37,9 @@ logging_send_syslog_msg(memlockd_t)
 miscfiles_read_localization(memlockd_t)
 
 sysnet_mmap_read_config(memlockd_t)
+sysnet_read_config(memlockd_t)
 
 ifndef(`distro_debian', `
 	allow memlockd_t self:capability dac_read_search;
 ')
+

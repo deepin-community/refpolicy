@@ -11,7 +11,17 @@ Index: refpolicy/policy/modules/services/deepin_perm_control.te
 ===================================================================
 --- refpolicy.orig/policy/modules/services/deepin_perm_control.te
 +++ refpolicy/policy/modules/services/deepin_perm_control.te
-@@ -302,6 +302,7 @@ allow deepin_security_server_domain self
+@@ -267,6 +267,9 @@ ifdef(`enable_usec',`
+ 		allow deepin_usec_t deepin_security_server_domain:process { ptrace signal sigkill sigstop };
+ 		allow deepin_usec_t deepin_perm_manager_unit_t:service *;
+ 	')
++
++	allow deepin_usec_t apt_t:process  { ptrace signal sigkill sigstop };
++	allow deepin_usec_t dpkg_t:process { ptrace signal sigkill sigstop };
+ ')
+ 
+ # 注意, 这里由deepin_perm_manager_unit_t 保证服务不被stop就能防止通过systemctl stop来杀安全服务了
+@@ -302,6 +305,7 @@ allow deepin_security_server_domain self
  allow deepin_security_server_domain self:cap_userns *;
  allow deepin_security_server_domain self:cap2_userns *;
  allow deepin_security_server_domain self:socket_class_set *;
@@ -19,7 +29,7 @@ Index: refpolicy/policy/modules/services/deepin_perm_control.te
  allow deepin_security_server_domain self:key_socket *;
  allow deepin_security_server_domain self:filesystem *;
  allow deepin_security_server_domain self:system *;
-@@ -871,17 +872,17 @@ allow deepin_executable_file_type deepin
+@@ -871,17 +875,18 @@ allow deepin_executable_file_type deepin
  ifdef(`enable_usec',`
  	# umount管控
  	require {
@@ -37,6 +47,7 @@ Index: refpolicy/policy/modules/services/deepin_perm_control.te
  	type_transition deepin_immutable_t deepin_usec_t:process deepin_immutable_t;
 -	allow deepin_perm_manager_sidtwo_t usec_immutable_fs_t:filesystem { unmount };
 +	allow deepin_perm_manager_sidtwo_t usec_immutable_fs_t:filesystem { unmount remount };
++	neverallow { apt_t dpkg_t } deepin_immutable_t:process { transition dyntransition };
  ')
  
  # 系统核心进程防杀标签

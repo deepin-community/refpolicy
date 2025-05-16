@@ -17,6 +17,7 @@ init_daemon_domain(switcheroo_t, switcheroo_exec_t)
 #
 
 allow switcheroo_t self:netlink_kobject_uevent_socket create_socket_perms;
+dontaudit switcheroo_t self:capability net_admin;
 
 kernel_read_system_state(switcheroo_t)
 

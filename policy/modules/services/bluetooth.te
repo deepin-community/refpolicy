@@ -90,6 +90,7 @@ files_runtime_filetrans(bluetooth_t, bluetooth_runtime_t, { file sock_file })
 
 can_exec(bluetooth_t, bluetooth_helper_exec_t)
 
+kernel_read_crypto_sysctls(bluetooth_t)
 kernel_read_kernel_sysctls(bluetooth_t)
 kernel_read_system_state(bluetooth_t)
 kernel_read_network_state(bluetooth_t)
@@ -126,6 +127,8 @@ logging_send_syslog_msg(bluetooth_t)
 miscfiles_read_localization(bluetooth_t)
 miscfiles_read_fonts(bluetooth_t)
 miscfiles_read_hwdata(bluetooth_t)
+
+udev_search_runtime(bluetooth_t)
 
 userdom_dontaudit_use_unpriv_user_fds(bluetooth_t)
 userdom_dontaudit_use_user_terminals(bluetooth_t)
@@ -220,6 +223,10 @@ optional_policy(`
 
 	dbus_system_bus_client(bluetooth_helper_t)
 	dbus_connect_system_bus(bluetooth_helper_t)
+')
+
+optional_policy(`
+	unconfined_dbus_send(bluetooth_t)
 ')
 
 optional_policy(`

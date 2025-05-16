@@ -977,6 +977,10 @@ allow spc_t self:process { getcap setrlimit };
 dontaudit spc_t self:process setfscreate;
 allow spc_t self:capability { audit_write chown dac_read_search fowner fsetid ipc_lock mknod net_admin net_raw setpcap sys_admin sys_chroot sys_nice sys_ptrace sys_rawio sys_resource };
 allow spc_t self:capability2 { bpf perfmon };
+
+# for qemu
+domain_mmap_low(spc_t)
+
 allow spc_t self:bpf { map_create map_read map_write prog_load prog_run };
 allow spc_t self:key manage_key_perms;
 allow spc_t self:alg_socket create_stream_socket_perms;

@@ -29,6 +29,8 @@ define(`basic_ubac_conditions',`
 	ifdef(`enable_ubac',`
 		u1 == u2
 		or u1 == system_u
+		or u1 == unconfined_u
+		or u1 == sysadm_u
 		or u2 == system_u
 		or t1 != ubac_constrained_type
 		or t2 != ubac_constrained_type
@@ -54,6 +56,17 @@ define(`exempted_ubac_constraint',`
 	')
 ')
 
+define(`exempted_constraint_setattr',`
+	constrain $1 { setattr }
+	(
+		u1 == u2
+		or u1 == system_u
+		or u2 == system_u
+		or t1 != $2
+		or u1 == root
+	);
+')
+
 ########################################
 #
 # File rules
@@ -67,10 +80,14 @@ exempted_ubac_constraint(sock_file, ubacfile)
 exempted_ubac_constraint(chr_file, ubacfile)
 exempted_ubac_constraint(blk_file, ubacfile)
 
+# setattr
+exempted_constraint_setattr(dir_file_class_set, login_userdomain)
+
 # SELinux object identity change constraint:
 constrain dir_file_class_set { create relabelto relabelfrom }
 (
 	u1 == u2
+	or t2 == deepin_file_type
 	or t1 == can_change_object_identity
 );
 

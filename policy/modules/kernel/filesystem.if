@@ -637,7 +637,24 @@ interface(`fs_getattr_binfmt_misc_dirs',`
 	')
 
 	allow $1 binfmt_misc_fs_t:dir getattr;
+')
 
+########################################
+## <summary>
+##	Read/write directories on binfmt_misc filesystems.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`fs_rw_binfmt_misc_dirs',`
+	gen_require(`
+		type binfmt_misc_fs_t;
+	')
+
+	allow $1 binfmt_misc_fs_t:dir rw_dir_perms;
 ')
 
 ########################################
@@ -838,6 +855,25 @@ interface(`fs_getattr_cgroup',`
 	')
 
 	allow $1 cgroup_types:filesystem getattr;
+')
+
+########################################
+## <summary>
+##	read cgroup directories.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`fs_read_cgroup_dirs',`
+	gen_require(`
+		attribute cgroup_types;
+	')
+
+	allow $1 cgroup_types:dir list_dir_perms;
+	dev_search_sysfs($1)
 ')
 
 ########################################
@@ -1342,6 +1378,24 @@ interface(`fs_watch_memory_pressure',`
 	')
 
 	allow $1 memory_pressure_t:file { rw_file_perms setattr };
+')
+
+########################################
+## <summary>
+##      Allow mounting a file ovr a memory.pressure file
+## </summary>
+## <param name="domain">
+##      <summary>
+##      Source domain
+##      </summary>
+## </param>
+#
+interface(`fs_mounton_memory_pressure',`
+	gen_require(`
+		type memory_pressure_t;
+	')
+
+	allow $1 memory_pressure_t:file mounton;
 ')
 
 ########################################
@@ -2196,6 +2250,25 @@ interface(`fs_cifs_domtrans',`
 
 	allow $1 cifs_t:dir search_dir_perms;
 	domain_auto_transition_pattern($1, cifs_t, $2)
+')
+
+#######################################
+## <summary>
+##	Create, read, write, and delete dirs
+##	on a configfs filesystem.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`fs_getattr_configfs_dirs',`
+	gen_require(`
+		type configfs_t;
+	')
+
+	allow $1 configfs_t:dir getattr;
 ')
 
 #######################################
@@ -6917,4 +6990,22 @@ interface(`fs_unconfined',`
 	')
 
 	typeattribute $1 filesystem_unconfined_type;
+')
+
+########################################
+## <summary>
+##	Search bpf dirs
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`fs_search_bpf',`
+	gen_require(`
+		type bpf_t;
+	')
+
+	allow $1 bpf_t:dir search;
 ')

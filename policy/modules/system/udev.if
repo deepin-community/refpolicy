@@ -244,6 +244,26 @@ interface(`udev_relabel_rules_files',`
 
 ########################################
 ## <summary>
+##      read udev rules files
+## </summary>
+## <param name="domain">
+##      <summary>
+##      Domain allowed access.
+##      </summary>
+## </param>
+#
+interface(`udev_read_rules_files',`
+	gen_require(`
+		type udev_rules_t;
+	')
+
+	allow $1 udev_rules_t:dir list_dir_perms;
+	allow $1 udev_rules_t:file read_file_perms;
+	files_search_etc($1)
+')
+
+########################################
+## <summary>
 ##	Search through udev runtime dirs.
 ## </summary>
 ## <param name="domain">
@@ -317,6 +337,25 @@ interface(`udev_read_runtime_files',`
 
 	files_search_runtime($1)
 	read_files_pattern($1, udev_runtime_t, udev_runtime_t)
+	read_lnk_files_pattern($1, udev_runtime_t, udev_runtime_t)
+')
+
+########################################
+## <summary>
+##	Read udev runtime links.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`udev_read_runtime_links',`
+	gen_require(`
+		type udev_runtime_t;
+	')
+
+	files_search_runtime($1)
 	read_lnk_files_pattern($1, udev_runtime_t, udev_runtime_t)
 ')
 

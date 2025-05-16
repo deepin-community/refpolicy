@@ -13,6 +13,18 @@ attribute pidfile;
 attribute configfile;
 attribute spoolfile;
 
+# For deepin permission manager
+attribute deepin_sidtwo_type;
+attribute deepin_file_type;
+attribute deepin_readable_file_type;
+attribute deepin_writable_file_type;
+attribute deepin_deletable_file_type;
+attribute deepin_executable_file_type;
+attribute deepin_usaudit_type;
+attribute deepin_usaudit_process_type;
+attribute deepin_usaudit_socket_type;
+attribute deepin_usaudit_file_type;
+
 # For labeling types that are to be polyinstantiated
 attribute polydir;
 

@@ -1237,3 +1237,22 @@ interface(`mta_rw_user_mail_stream_sockets',`
 
 	allow $1 user_mail_domain:unix_stream_socket rw_socket_perms;
 ')
+
+# hack for exim postinst in Debian
+#######################################
+## <summary>
+##	Allow system_mail_t to run in a role
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Role allowed access.
+##	</summary>
+## </param>
+#
+interface(`mta_system_mail_role',`
+	gen_require(`
+		type system_mail_t;
+	')
+
+	role $1 types system_mail_t;
+')

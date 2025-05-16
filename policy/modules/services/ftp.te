@@ -409,6 +409,13 @@ optional_policy(`
 	systemd_write_inherited_logind_sessions_pipes(ftpd_t)
 ')
 
+optional_policy(`
+	systemd_connect_machined(ftpd_t)
+	systemd_dbus_chat_logind(ftpd_t)
+	systemd_read_logind_state(ftpd_t)
+	systemd_write_inherited_logind_sessions_pipes(ftpd_t)
+')
+
 ########################################
 #
 # Ctl local policy

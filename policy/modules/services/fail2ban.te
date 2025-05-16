@@ -92,6 +92,8 @@ fs_getattr_all_fs(fail2ban_t)
 
 auth_use_nsswitch(fail2ban_t)
 
+libs_dontaudit_write_lib_dirs(fail2ban_t)
+
 logging_read_all_logs(fail2ban_t)
 logging_read_audit_log(fail2ban_t)
 logging_send_syslog_msg(fail2ban_t)
@@ -136,7 +138,7 @@ optional_policy(`
 #
 
 allow fail2ban_client_t self:capability dac_read_search;
-allow fail2ban_client_t self:unix_stream_socket { connect create read write };
+allow fail2ban_client_t self:unix_stream_socket { connect create read write shutdown };
 
 domtrans_pattern(fail2ban_client_t, fail2ban_exec_t, fail2ban_t)
 
@@ -151,6 +153,8 @@ domain_use_interactive_fds(fail2ban_client_t)
 files_read_etc_files(fail2ban_client_t)
 files_read_usr_files(fail2ban_client_t)
 files_search_runtime(fail2ban_client_t)
+
+libs_dontaudit_write_lib_dirs(fail2ban_client_t)
 
 logging_getattr_all_logs(fail2ban_client_t)
 logging_search_all_logs(fail2ban_client_t)

@@ -53,6 +53,13 @@ ifeq "$(TYPE)" "mcs"
 	CHECKMODULE += -M
 endif
 
+# enable MLS if MCS requested.
+ifeq "$(TYPE)" "usec"
+	M4PARAM += -D enable_usec -D enable_mcs
+	CHECKPOLICY += -M
+	CHECKMODULE += -M
+endif
+
 # enable distribution-specific policy
 ifneq ($(DISTRO),)
 	M4PARAM += -D distro_$(DISTRO)

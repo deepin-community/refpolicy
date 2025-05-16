@@ -17,7 +17,7 @@ attribute can_load_kernmodule;
 attribute can_receive_kernel_messages;
 attribute can_dump_kernel;
 
-neverallow ~can_load_kernmodule self:capability sys_module;
+#(zzl) neverallow~can_load_kernmodule self:capability sys_module;
 
 # domains with unconfined access to kernel resources
 attribute kern_unconfined;
@@ -88,7 +88,7 @@ genfscon proc /fs/openafs gen_context(system_u:object_r:proc_afs_t,s0)
 # kernel message interface
 type proc_kmsg_t, proc_type;
 genfscon proc /kmsg gen_context(system_u:object_r:proc_kmsg_t,mls_systemhigh)
-neverallow ~{ can_receive_kernel_messages kern_unconfined } proc_kmsg_t:file read;
+#(zzl) neverallow~{ can_receive_kernel_messages kern_unconfined } proc_kmsg_t:file read;
 
 optional_policy(`
 	init_mountpoint(proc_kmsg_t)
@@ -96,7 +96,7 @@ optional_policy(`
 
 # /proc kcore: inaccessible
 type proc_kcore_t, proc_type;
-neverallow ~{ can_dump_kernel kern_unconfined } proc_kcore_t:file ~{ getattr mounton };
+#(zzl) neverallow~{ can_dump_kernel kern_unconfined } proc_kcore_t:file ~{ getattr mounton };
 genfscon proc /kcore gen_context(system_u:object_r:proc_kcore_t,mls_systemhigh)
 
 optional_policy(`
@@ -212,14 +212,14 @@ kernel_rootfs_mountpoint(unlabeled_t)
 fs_associate(unlabeled_t)
 sid file gen_context(system_u:object_r:unlabeled_t,s0)
 sid unlabeled gen_context(system_u:object_r:unlabeled_t,mls_systemhigh)
-neverallow * unlabeled_t:file entrypoint;
+#(zzl) neverallow* unlabeled_t:file entrypoint;
 
 # These initial sids are no longer used, and can be removed:
 sid any_socket		gen_context(system_u:object_r:unlabeled_t,mls_systemhigh)
 sid file_labels		gen_context(system_u:object_r:unlabeled_t,s0)
 sid icmp_socket		gen_context(system_u:object_r:unlabeled_t,mls_systemhigh)
 sid igmp_packet		gen_context(system_u:object_r:unlabeled_t,mls_systemhigh)
-sid init		gen_context(system_u:object_r:unlabeled_t,s0)
+sid init		gen_context(system_u:system_r:init_t,s0)
 sid kmod		gen_context(system_u:object_r:unlabeled_t,mls_systemhigh)
 sid policy		gen_context(system_u:object_r:unlabeled_t,mls_systemhigh)
 sid scmp_packet		gen_context(system_u:object_r:unlabeled_t,mls_systemhigh)
@@ -238,6 +238,7 @@ sid tcp_socket		gen_context(system_u:object_r:unlabeled_t,mls_systemhigh)
 #
 
 allow kernel_t self:capability { audit_control audit_write chown dac_override dac_read_search fowner fsetid ipc_lock ipc_owner kill lease linux_immutable mknod net_admin net_bind_service net_broadcast net_raw setfcap setgid setpcap setuid sys_admin sys_boot sys_chroot sys_nice sys_pacct sys_ptrace sys_rawio sys_resource sys_time sys_tty_config };
+allow kernel_t self:capability2 checkpoint_restore;
 allow kernel_t self:process { dyntransition getattr getcap getpgid getrlimit getsched getsession noatsecure rlimitinh setcap setkeycreate setpgid setsched setsockcreate share siginh signal_perms transition };
 allow kernel_t self:shm create_shm_perms;
 allow kernel_t self:sem create_sem_perms;
@@ -250,6 +251,7 @@ allow kernel_t self:unix_stream_socket connectto;
 allow kernel_t self:fifo_file rw_fifo_file_perms;
 allow kernel_t self:sock_file read_sock_file_perms;
 allow kernel_t self:fd use;
+allow kernel_t self:perf_event cpu;
 
 allow kernel_t debugfs_t:dir search_dir_perms;
 
@@ -358,6 +360,12 @@ corecmd_exec_bin(kernel_t)
 
 domain_signal_all_domains(kernel_t)
 domain_search_all_domains_state(kernel_t)
+
+# for start deepin_elf_verify program
+optional_policy(`
+    deepin_elfverify_entry_type(kernel_t)
+    deepin_exec_elf_verify(kernel_t)
+')
 
 files_getattr_rootfs(kernel_t)
 files_manage_root_dir(kernel_t)

@@ -180,7 +180,7 @@ template(`ssh_server_template', `
 	##	Allow sshd to use remote port forwarding (bind to any TCP port)
 	## </p>
 	## </desc>
-	gen_tunable($1_port_forwarding, false)
+	gen_tunable(`$1_port_forwarding', false)
 
 	type $1_t, ssh_server;
 	auth_login_pgm_domain($1_t)
@@ -287,6 +287,7 @@ template(`ssh_server_template', `
 	')
 
 	optional_policy(`
+		systemd_getattr_notify_socket($1_t)
 		systemd_read_logind_sessions_files($1_t)
 		systemd_stream_connect_userdb($1_t)
 	')
@@ -396,6 +397,7 @@ template(`ssh_role_template',`
 	ps_process_pattern($3, $1_ssh_agent_t)
 
 	domtrans_pattern($3, ssh_agent_exec_t, $1_ssh_agent_t)
+	userdom_append_inherited_user_home_content_files($1_ssh_agent_t)
 
 	kernel_read_kernel_sysctls($1_ssh_agent_t)
 

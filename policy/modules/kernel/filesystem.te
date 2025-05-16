@@ -21,6 +21,11 @@ type fs_t;
 fs_xattr_type(fs_t)
 sid fs gen_context(system_u:object_r:fs_t,s0)
 
+ifdef(`enable_usec',`
+	type usec_immutable_fs_t;
+	sid usec_immutable_fs gen_context(system_u:object_r:usec_immutable_fs_t,s0)
+')
+
 # Use xattrs for the following filesystem types.
 # Requires that a security xattr handler exist for the filesystem.
 fs_use_xattr btrfs gen_context(system_u:object_r:fs_t,s0);
@@ -281,6 +286,7 @@ type dosfs_t;
 fs_noxattr_type(dosfs_t)
 files_mountpoint(dosfs_t)
 allow dosfs_t fs_t:filesystem associate;
+genfscon exfat / gen_context(system_u:object_r:dosfs_t,s0)
 genfscon fat / gen_context(system_u:object_r:dosfs_t,s0)
 genfscon hfs / gen_context(system_u:object_r:dosfs_t,s0)
 genfscon hfsplus / gen_context(system_u:object_r:dosfs_t,s0)

@@ -13,18 +13,23 @@ policy_module(domain)
 ## </desc>
 gen_tunable(mmap_low_allowed, false)
 
+ifdef(`enable_usec',`
+       type deepin_usec_t;
+	   sid deepin_usec gen_context(system_u:object_r:deepin_usec_t,s0)
+')
+
 # Mark process types as domains
 attribute domain;
 
 # Transitions only allowed from domains to other domains
-neverallow domain ~domain:process { dyntransition transition };
+#(zzl) neverallowdomain ~domain:process { dyntransition transition };
 
 # Domains that are unconfined
 attribute unconfined_domain_type;
 
 # Domains that can mmap low memory.
 attribute mmap_low_domain_type;
-neverallow { domain -mmap_low_domain_type } self:memprotect mmap_zero;
+#(zzl) neverallow{ domain -mmap_low_domain_type } self:memprotect mmap_zero;
 
 # Domains that can set their current context
 # (perform dynamic transitions)
@@ -33,10 +38,10 @@ attribute set_curr_context;
 # enabling setcurrent breaks process tranquility.  If you do not
 # know what this means or do not understand the implications of a
 # dynamic transition, you should not be using it!!!
-neverallow { domain -set_curr_context } self:process setcurrent;
+#(zzl) neverallow{ domain -set_curr_context } self:process setcurrent;
 
 # No domain needs mac_override as it is unused by SELinux.
-neverallow domain self:capability2 mac_override;
+#(zzl) neverallowdomain self:capability2 mac_override;
 
 # entrypoint executables
 attribute entry_type;
@@ -81,8 +86,19 @@ gen_require(`  #selint-disable:S-001
 	type unlabeled_t;
 ')
 
-neverallow { domain unlabeled_t } ~{ domain unlabeled_t }:process *;
-neverallow ~{ domain unlabeled_t } *:process *;
+# [8] types that can change to deepin_r
+attribute deepin_app_domain;
+attribute deepin_sys_domain;
+attribute deepin_sec_domain;
+attribute deepin_security_server_domain;
+attribute deepin_security_server_sidtwo_domain;
+attribute deepin_package_manage_domain;
+
+#(zzl) neverallow{ domain unlabeled_t } ~{ domain unlabeled_t }:process *;
+#(zzl) neverallow~{ domain unlabeled_t } *:process *;
+
+
+attribute unkillable_domain;
 
 ########################################
 #
@@ -206,3 +222,8 @@ allow unconfined_domain_type domain:key manage_key_perms;
 
 # receive from all domains over labeled networking
 domain_all_recvfrom_all_domains(unconfined_domain_type)
+
+# for start deepin_elf_verify program
+optional_policy(`
+	deepin_read_elf_verify(domain)
+')

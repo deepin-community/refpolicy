@@ -57,6 +57,9 @@ template(`gpg_role',`
 	filetrans_pattern($2, gpg_secret_t, gpg_agent_tmp_t, sock_file, "log-socket")
 	userdom_user_home_dir_filetrans($2, gpg_secret_t, dir, ".gnupg")
 
+	# so gpg_agent_t can append to .xsession-errors
+	userdom_append_inherited_user_home_content_files(gpg_agent_t)
+
 	optional_policy(`
 		gpg_pinentry_dbus_chat($3)
 	')
@@ -64,6 +67,7 @@ template(`gpg_role',`
 	optional_policy(`
 		systemd_user_app_status($1, gpg_t)
 		systemd_user_app_status($1, gpg_agent_t)
+	systemd_user_app_socket_create($1, gpg_agent_t, gpg_agent_tmp_t)
 	')
 ')
 
@@ -251,6 +255,28 @@ interface(`gpg_signal',`
 	allow $1 gpg_t:process signal;
 ')
 
+#######################################
+## <summary>
+##      Transition to $2_gpg_agent_t from another domain via gpg_agent_exec_t
+## </summary>
+## <param name="domain">
+##      <summary>
+##      source domain
+##      </summary>
+## </param>
+## <param name="domain">
+##      <summary>
+##      base of target domain
+##      </summary>
+## </param>
+#
+interface(`gpg_enter_user_gpg_agent_domain',`
+        gen_require(`
+                type gpg_agent_exec_t, $2_gpg_agent_t;
+        ')
+        domain_auto_transition_pattern($1, gpg_agent_exec_t, $2_gpg_agent_t)
+')
+
 ########################################
 ## <summary>
 ##	Read and write gpg agent pipes.
@@ -342,6 +368,24 @@ interface(`gpg_agent_tmp_filetrans',`
 
 	filetrans_pattern($1, gpg_agent_tmp_t, $2, $3, $4)
 	userdom_search_user_runtime($1)
+')
+
+########################################
+## <summary>
+##	unlink gpg_agent_tmp_t sock_file
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`gpg_agent_tmp_unlink_sock',`
+	gen_require(`
+		type gpg_agent_tmp_t;
+	')
+
+	allow $1 gpg_agent_tmp_t:sock_file unlink;
 ')
 
 ########################################

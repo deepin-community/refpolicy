@@ -77,6 +77,7 @@ allow policykit_t self:unix_stream_socket { accept connectto listen };
 rw_files_pattern(policykit_t, policykit_reload_t, policykit_reload_t)
 
 manage_files_pattern(policykit_t, policykit_var_lib_t, policykit_var_lib_t)
+allow policykit_t policykit_var_lib_t:dir watch;
 
 manage_dirs_pattern(policykit_t, policykit_runtime_t, policykit_runtime_t)
 manage_files_pattern(policykit_t, policykit_runtime_t, policykit_runtime_t)
@@ -137,6 +138,7 @@ optional_policy(`
 	systemd_connect_machined(policykit_t)
 	systemd_read_machines(policykit_t)
 	systemd_watch_machines_dirs(policykit_t)
+	systemd_connect_machined(policykit_t)
 
 	# for /run/systemd/seats/seat*
 	systemd_read_logind_sessions_files(policykit_t)

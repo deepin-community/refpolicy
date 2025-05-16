@@ -114,6 +114,9 @@ template(`xserver_restricted_role',`
 	xserver_read_xdm_runtime_files($2)
 	# gnome-session creates socket under /tmp/.ICE-unix/
 	xserver_create_xdm_tmp_sockets($2)
+	# if we allow xserver_create_xdm_tmp_sockets and we use wayland then
+	# we need to unlink as well.  Maybe should use a different type.
+	allow $2 xdm_tmp_t:sock_file { unlink };
 	# Needed for escd, remove if we get escd policy
 	xserver_manage_xdm_tmp_files($2)
 
@@ -221,7 +224,7 @@ template(`xserver_role',`
 
 	xserver_read_xkb_libs($2)
 
-	allow $2 xdm_t:unix_stream_socket accept;
+	allow $2 xdm_t:unix_stream_socket { getattr accept };
 
 	optional_policy(`
 		systemd_user_app_status($1, xserver_t)
@@ -1082,6 +1085,24 @@ interface(`xserver_read_xdm_lib_files',`
 	')
 
 	allow $1 xdm_var_lib_t:file read_file_perms;
+')
+
+########################################
+## <summary>
+##	map XDM var lib files.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`xserver_map_xdm_lib_files',`
+	gen_require(`
+		type xdm_var_lib_t;
+	')
+
+	allow $1 xdm_var_lib_t:file map;
 ')
 
 ########################################

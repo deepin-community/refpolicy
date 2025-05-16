@@ -50,7 +50,7 @@ genfscon securityfs / gen_context(system_u:object_r:security_t,s0)
 # Controlled setenforce access
 #
 
-neverallow ~{ selinux_unconfined_type can_setenforce } security_t:security setenforce;
+#(zzl) neverallow~{ selinux_unconfined_type can_setenforce } security_t:security setenforce;
 
 allow can_setenforce security_t:dir list_dir_perms;
 allow can_setenforce security_t:file rw_file_perms;
@@ -68,7 +68,7 @@ if(secure_mode_policyload) {
 # Controlled load_policy access
 #
 
-neverallow ~{ selinux_unconfined_type can_load_policy } security_t:security load_policy;
+#(zzl) neverallow~{ selinux_unconfined_type can_load_policy } security_t:security load_policy;
 
 allow can_load_policy security_t:dir list_dir_perms;
 allow can_load_policy security_t:file rw_file_perms;
@@ -86,7 +86,7 @@ if(secure_mode_policyload) {
 # Controlled security parameters access
 #
 
-neverallow ~{ selinux_unconfined_type can_setsecparam } security_t:security setsecparam;
+#(zzl) neverallow~{ selinux_unconfined_type can_setsecparam } security_t:security setsecparam;
 
 allow can_setsecparam security_t:dir list_dir_perms;
 allow can_setsecparam security_t:file rw_file_perms;

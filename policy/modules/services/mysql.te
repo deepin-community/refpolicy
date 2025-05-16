@@ -127,6 +127,7 @@ fs_getattr_all_fs(mysqld_t)
 fs_search_auto_mountpoints(mysqld_t)
 fs_search_tmpfs(mysqld_t)
 fs_rw_hugetlbfs_files(mysqld_t)
+fs_watch_memory_pressure(mysqld_t)
 
 files_read_etc_runtime_files(mysqld_t)
 files_read_usr_files(mysqld_t)
@@ -140,6 +141,10 @@ miscfiles_read_localization(mysqld_t)
 
 userdom_search_user_home_dirs(mysqld_t)
 userdom_dontaudit_use_unpriv_user_fds(mysqld_t)
+
+ifdef(`init_systemd',`
+	systemd_connect_machined(mysqld_t)
+')
 
 tunable_policy(`mysql_connect_any',`
 	corenet_sendrecv_all_client_packets(mysqld_t)

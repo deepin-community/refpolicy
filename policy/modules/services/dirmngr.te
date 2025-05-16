@@ -83,10 +83,15 @@ miscfiles_read_generic_certs(dirmngr_t)
 userdom_search_user_home_dirs(dirmngr_t)
 userdom_search_user_runtime(dirmngr_t)
 userdom_user_runtime_filetrans(dirmngr_t, dirmngr_tmp_t, dir)
+allow dirmngr_t dirmngr_tmp_t:dir manage_dir_perms;
 
 optional_policy(`
 	gpg_agent_tmp_filetrans(dirmngr_t, dirmngr_tmp_t, sock_file)
 	gpg_runtime_filetrans(dirmngr_t, dirmngr_tmp_t, sock_file)
 	gpg_secret_filetrans(dirmngr_t, dirmngr_home_t, dir)
 	gpg_stream_connect_agent(dirmngr_t)
+')
+
+optional_policy(`
+	corenet_tcp_connect_tor_port(dirmngr_t)
 ')

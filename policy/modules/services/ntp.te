@@ -131,6 +131,7 @@ term_use_ptmx(ntpd_t)
 auth_use_nsswitch(ntpd_t)
 
 init_exec_script_files(ntpd_t)
+init_get_generic_units_status(ntpd_t)
 
 logging_send_syslog_msg(ntpd_t)
 

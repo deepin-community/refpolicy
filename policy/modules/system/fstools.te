@@ -170,12 +170,19 @@ init_dontaudit_getattr_initctl(fsadm_t)
 init_read_state(fsadm_t)
 init_rw_script_stream_sockets(fsadm_t)
 
+ifdef(`hide_broken_symptoms',`
+	# for /run/pm-utils/locks/pm-powersave.lock
+	init_read_utmp(fsadm_t)
+')
+
 logging_send_syslog_msg(fsadm_t)
 
 miscfiles_read_localization(fsadm_t)
 
 # for /run/mount/utab
 mount_read_runtime_files(fsadm_t)
+
+mount_rw_runtime_files(fsadm_t)
 
 seutil_read_config(fsadm_t)
 
@@ -224,6 +231,10 @@ optional_policy(`
 ')
 
 optional_policy(`
+	fsdaemon_read_lib(fsadm_t)
+')
+
+optional_policy(`
 	livecd_rw_tmp_files(fsadm_t)
 ')
 
@@ -234,6 +245,10 @@ optional_policy(`
 
 optional_policy(`
 	munin_rw_tcp_sockets(fsadm_t)
+')
+
+optional_policy(`
+	mon_dontaudit_use_fds(fsadm_t)
 ')
 
 optional_policy(`

@@ -66,30 +66,30 @@ gen_levels(mls_num_sens,mls_num_cats)
 
 # make sure these file classes are "single level"
 mlsconstrain { file lnk_file fifo_file } { create relabelto }
-	( l2 eq h2 );
+	(( l2 eq h2 ) or ( t1 == mcsexemptiondomain ));
 
 # new file labels must be dominated by the relabeling subjects clearance
 mlsconstrain { dir file lnk_file chr_file blk_file sock_file fifo_file } relabelto
-	(( h1 dom h2 ) or
+	(( h1 dom h2 ) or ( t1 == mcsexemptiondomain ) or
 	(( t1 == mlsfilerelabeltoclr ) and ( h1 dom l2 )) or
 	( t1 == mlsfilerelabel ));
 
 # the file "read" ops (note the check is dominance of the low level)
 mlsconstrain { dir file lnk_file chr_file blk_file sock_file fifo_file } { read getattr execute }
-	(( l1 dom l2 ) or
+	(( l1 dom l2 ) or ( t1 == mcsexemptiondomain ) or
 	 (( t1 == mlsfilereadtoclr ) and ( h1 dom l2 )) or
 	 ( t1 == mlsfileread ) or
 	 ( t2 == mlstrustedobject ));
 
 mlsconstrain dir search
-	(( l1 dom l2 ) or
+	(( l1 dom l2 ) or ( t1 == mcsexemptiondomain ) or
 	 (( t1 == mlsfilereadtoclr ) and ( h1 dom l2 )) or
 	 ( t1 == mlsfileread ) or
 	 ( t2 == mlstrustedobject ));
 
 # the "single level" file "write" ops
 mlsconstrain { file lnk_file fifo_file dir chr_file blk_file sock_file } { write create setattr relabelfrom append unlink link rename mounton }
-	(( l1 eq l2 ) or
+	(( l1 eq l2 ) or ( t1 == mcsexemptiondomain ) or ( t1 == mcsexemptiondomain ) or
 	 (( t1 == mlsfilewritetoclr ) and ( h1 dom l2 ) and ( l1 domby l2 )) or
 	 (( t2 == mlsfilewriteinrange ) and ( l1 dom l2 ) and ( h1 domby h2 )) or
 	 ( t1 == mlsfilewrite ) or
@@ -97,7 +97,7 @@ mlsconstrain { file lnk_file fifo_file dir chr_file blk_file sock_file } { write
 
 # Directory "write" ops
 mlsconstrain dir { add_name remove_name reparent rmdir }
-	(( l1 eq l2 ) or
+	(( l1 eq l2 ) or ( t1 == mcsexemptiondomain ) or
 	 (( t1 == mlsfilewriteinrange ) and ( l1 dom l2 ) and ( l1 domby h2 )) or
 	 (( t1 == mlsfilewritetoclr ) and ( h1 dom l2 ) and ( l1 domby l2 )) or
 	 ( t1 == mlsfilewrite ) or
@@ -111,27 +111,27 @@ mlsconstrain dir { add_name remove_name reparent rmdir }
 
 # the file upgrade/downgrade rule
 mlsvalidatetrans { dir file lnk_file chr_file blk_file sock_file fifo_file }
-	((( l1 eq l2 ) or
+	(( t1 == mlsexemptiondomain ) or ((( l1 eq l2 ) or
 	  (( t3 == mlsfileupgrade ) and ( l1 domby l2 )) or
 	  (( t3 == mlsfiledowngrade ) and ( l1 dom l2 )) or
 	  (( t3 == mlsfiledowngrade ) and ( l1 incomp l2 ))) and
 	 (( h1 eq h2 ) or
 	  (( t3 == mlsfileupgrade ) and ( h1 domby h2 )) or
 	  (( t3 == mlsfiledowngrade ) and ( h1 dom h2 )) or
-	  (( t3 == mlsfiledowngrade ) and ( h1 incomp h2 ))));
+	  (( t3 == mlsfiledowngrade ) and ( h1 incomp h2 )))));
 
 # create can also require the upgrade/downgrade checks if the creating process
 # has used setfscreate (note that both the high and low level of the object
 # default to the process sensitivity level)
 mlsconstrain { dir file lnk_file chr_file blk_file sock_file fifo_file } create
-	((( l1 eq l2 ) or
+	(( t1 == mlsexemptiondomain ) or ((( l1 eq l2 ) or
 	  (( t1 == mlsfileupgrade ) and ( l1 domby l2 )) or
 	  (( t1 == mlsfiledowngrade ) and ( l1 dom l2 )) or
 	  (( t1 == mlsfiledowngrade ) and ( l1 incomp l2 ))) and
 	 (( l1 eq h2 ) or
 	  (( t1 == mlsfileupgrade ) and ( l1 domby h2 )) or
 	  (( t1 == mlsfiledowngrade ) and ( l1 dom h2 )) or
-	  (( t1 == mlsfiledowngrade ) and ( l1 incomp h2 ))));
+	  (( t1 == mlsfiledowngrade ) and ( l1 incomp h2 )))));
 
 
 
@@ -142,7 +142,7 @@ mlsconstrain { dir file lnk_file chr_file blk_file sock_file fifo_file } create
 
 # new filesystem labels must be dominated by the relabeling subjects clearance
 mlsconstrain filesystem relabelto
-	( h1 dom h2 );
+	(( h1 dom h2 ) or ( t1 == mlsexemptiondomain ));
 
 # the filesystem "read" ops (implicit single level)
 mlsconstrain filesystem { getattr quotaget }
@@ -152,7 +152,7 @@ mlsconstrain filesystem { getattr quotaget }
 
 # all the filesystem "write" ops (implicit single level)
 mlsconstrain filesystem { mount remount unmount relabelfrom quotamod }
-	(( l1 eq l2 ) or
+	(( l1 eq l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsfilewritetoclr ) and ( h1 dom l2 ) and ( l1 domby l2 )) or
 	 ( t1 == mlsfilewrite ));
 
@@ -168,13 +168,13 @@ mlsconstrain filesystem { mount remount unmount relabelfrom quotamod }
 
 # new socket labels must be dominated by the relabeling subjects clearance
 mlsconstrain { socket tcp_socket udp_socket rawip_socket netlink_socket packet_socket key_socket unix_stream_socket unix_dgram_socket netlink_route_socket netlink_tcpdiag_socket netlink_nflog_socket netlink_xfrm_socket netlink_selinux_socket netlink_audit_socket netlink_dnrt_socket netlink_iscsi_socket netlink_fib_lookup_socket netlink_connector_socket netlink_netfilter_socket netlink_generic_socket netlink_scsitransport_socket netlink_rdma_socket netlink_crypto_socket sctp_socket } relabelto
-	( h1 dom h2 );
+	(( h1 dom h2 ) or ( t1 == mlsexemptiondomain ));
 
 # the socket "read+write" ops
 # (Socket FDs are generally bidirectional, equivalent to open(..., O_RDWR),
 # require equal levels for unprivileged subjects, or read *and* write overrides)
 mlsconstrain { socket tcp_socket udp_socket rawip_socket netlink_socket packet_socket key_socket unix_stream_socket unix_dgram_socket netlink_route_socket netlink_tcpdiag_socket netlink_nflog_socket netlink_xfrm_socket netlink_selinux_socket netlink_audit_socket netlink_dnrt_socket sctp_socket } { accept connect }
-	(( l1 eq l2 ) or
+	(( l1 eq l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (((( t1 == mlsnetreadtoclr ) and ( h1 dom l2 )) or
 	   ( t1 == mlsnetread )) and
 	  ((( t1 == mlsnetwriteranged ) and ( l1 dom l2 ) and ( l1 domby h2 )) or
@@ -184,31 +184,31 @@ mlsconstrain { socket tcp_socket udp_socket rawip_socket netlink_socket packet_s
 
 # the socket "read" ops (note the check is dominance of the low level)
 mlsconstrain { socket tcp_socket udp_socket rawip_socket netlink_socket packet_socket key_socket unix_stream_socket unix_dgram_socket netlink_route_socket netlink_tcpdiag_socket netlink_nflog_socket netlink_xfrm_socket netlink_selinux_socket netlink_audit_socket netlink_dnrt_socket netlink_iscsi_socket netlink_fib_lookup_socket netlink_connector_socket netlink_netfilter_socket netlink_generic_socket netlink_scsitransport_socket netlink_rdma_socket netlink_crypto_socket sctp_socket } { read getattr listen accept getopt }
-	(( l1 dom l2 ) or
+	(( l1 dom l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsnetreadtoclr ) and ( h1 dom l2 )) or
 	 ( t1 == mlsnetread ));
 
 mlsconstrain { netlink_route_socket netlink_tcpdiag_socket netlink_xfrm_socket netlink_audit_socket } nlmsg_read
-	(( l1 dom l2 ) or
+	(( l1 dom l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsnetreadtoclr ) and ( h1 dom l2 )) or
 	 ( t1 == mlsnetread ));
 
 # the socket "write" ops
 mlsconstrain { socket tcp_socket udp_socket rawip_socket netlink_socket packet_socket key_socket unix_stream_socket unix_dgram_socket netlink_route_socket netlink_tcpdiag_socket netlink_nflog_socket netlink_xfrm_socket netlink_selinux_socket netlink_audit_socket netlink_dnrt_socket netlink_iscsi_socket netlink_fib_lookup_socket netlink_connector_socket netlink_netfilter_socket netlink_generic_socket netlink_scsitransport_socket netlink_rdma_socket netlink_crypto_socket sctp_socket } { write setattr relabelfrom connect setopt shutdown }
-	(( l1 eq l2 ) or
+	(( l1 eq l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsnetwriteranged ) and ( l1 dom l2 ) and ( l1 domby h2 )) or
 	 (( t1 == mlsnetwritetoclr ) and ( h1 dom l2 ) and ( l1 domby l2 )) or
 	 ( t1 == mlsnetwrite ));
 
 # used by netlabel to restrict normal domains to same level connections
 mlsconstrain { tcp_socket udp_socket rawip_socket sctp_socket } recvfrom
-	(( l1 eq l2 ) or
+	(( l1 eq l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsnetreadtoclr ) and ( h1 dom l2 )) or
 	 ( t1 == mlsnetread ));
 
 # UNIX domain socket ops
 mlsconstrain unix_stream_socket connectto
-	(( l1 eq l2 ) or
+	(( l1 eq l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsnetwriteranged ) and ( l1 dom l2 ) and ( l1 domby h2 )) or
 	 (( t1 == mlsnetwritetoclr ) and ( h1 dom l2 ) and ( l1 domby l2 )) or
 	 ( t1 == mlsnetwrite ) or
@@ -216,7 +216,7 @@ mlsconstrain unix_stream_socket connectto
 	 ( t2 == mlstrustedsocket ));
 
 mlsconstrain unix_dgram_socket sendto
-	(( l1 eq l2 ) or
+	(( l1 eq l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsnetwriteranged ) and ( l1 dom l2 ) and ( l1 domby h2 )) or
 	 (( t1 == mlsnetwritetoclr ) and ( h1 dom l2 ) and ( l1 domby l2 )) or
 	 ( t1 == mlsnetwrite ) or
@@ -247,33 +247,33 @@ mlsconstrain unix_dgram_socket sendto
 
 # the ipc "read" ops (implicit single level)
 mlsconstrain { ipc sem msgq shm } { getattr read unix_read }
-	(( l1 dom l2 ) or
+	(( l1 dom l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsipcreadtoclr ) and ( h1 dom l2 )) or
 	 ( t1 == mlsipcread ));
 
 mlsconstrain msg receive
-	(( l1 dom l2 ) or
+	(( l1 dom l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsipcreadtoclr ) and ( h1 dom l2 )) or
 	 ( t1 == mlsipcread ));
 
 # the ipc "write" ops (implicit single level)
 mlsconstrain { ipc sem msgq shm } { create destroy setattr write unix_write }
-	(( l1 eq l2 ) or
+	(( l1 eq l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsipcwritetoclr ) and ( h1 dom l2 ) and ( l1 domby l2 )) or
 	 ( t1 == mlsipcwrite ));
 
 mlsconstrain msgq enqueue
-	(( l1 eq l2 ) or
+	(( l1 eq l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsipcwritetoclr ) and ( h1 dom l2 ) and ( l1 domby l2 )) or
 	 ( t1 == mlsipcwrite ));
 
 mlsconstrain shm lock
-	(( l1 eq l2 ) or
+	(( l1 eq l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsipcwritetoclr ) and ( h1 dom l2 ) and ( l1 domby l2 )) or
 	 ( t1 == mlsipcwrite ));
 
 mlsconstrain msg send
-	(( l1 eq l2 ) or
+	(( l1 eq l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsipcwritetoclr ) and ( h1 dom l2 ) and ( l1 domby l2 )) or
 	 ( t1 == mlsipcwrite ));
 
@@ -286,7 +286,7 @@ mlsconstrain msg send
 #
 
 mlsconstrain key { create link read search setattr view write }
-	(( l1 eq l2 ) or
+	(( l1 eq l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlskeywritetoclr ) and ( h1 dom l2 ) and ( l1 domby l2 )) or
 	 ( t1 == mlskeywrite ));
 
@@ -301,6 +301,7 @@ mlsconstrain key { create link read search setattr view write }
 # shared among levels (mlsfdshare).
 mlsconstrain fd use (
 	l1 eq l2
+	or t1 == mlsexemptiondomain
 	or t1 == mlsfduse
 	or t2 == mlsfdshare
 );
@@ -313,33 +314,33 @@ mlsconstrain fd use (
 # because the subject in this particular case is the remote domain which is
 # writing data out the network interface which is acting as the object
 mlsconstrain { netif } { ingress }
-	((( l1 dom l2 ) and ( l1 domby h2 )) or
+	((( l1 dom l2 ) and ( l1 domby h2 )) or ( t1 == mlsexemptiondomain ) or
 	 ( t1 == mlsnetinbound ) or
 	 ( t1 == unlabeled_t ));
 mlsconstrain { netif } { egress }
-	((( l1 dom l2 ) and ( l1 domby h2 )) or
+	((( l1 dom l2 ) and ( l1 domby h2 )) or ( t1 == mlsexemptiondomain ) or
 	 ( t1 == mlsnetoutbound ));
 
 # the node recvfrom/sendto ops, the recvfrom permission is a "write" operation
 # because the subject in this particular case is the remote domain which is
 # writing data out the network node which is acting as the object
 mlsconstrain { node } { recvfrom }
-	((( l1 dom l2 ) and ( l1 domby h2 )) or
+	((( l1 dom l2 ) and ( l1 domby h2 )) or ( t1 == mlsexemptiondomain ) or
 	 ( t1 == mlsnetinbound ) or
 	 ( t1 == unlabeled_t ));
 mlsconstrain { node } { sendto }
-	((( l1 dom l2 ) and ( l1 domby h2 )) or
+	((( l1 dom l2 ) and ( l1 domby h2 )) or ( t1 == mlsexemptiondomain ) or
 	 ( t1 == mlsnetoutbound ));
 
 # the forward ops, the forward_in permission is a "write" operation because the
 # subject in this particular case is the remote domain which is writing data
 # to the network with a secmark label, the object in this case
 mlsconstrain { packet } { forward_in }
-	((( l1 dom l2 ) and ( l1 domby h2 )) or
+	((( l1 dom l2 ) and ( l1 domby h2 )) or ( t1 == mlsexemptiondomain ) or
 	 ( t1 == mlsnetinbound ) or
 	 ( t1 == unlabeled_t ));
 mlsconstrain { packet } { forward_out }
-	((( l1 dom l2 ) and ( l1 domby h2 )) or
+	((( l1 dom l2 ) and ( l1 domby h2 )) or ( t1 == mlsexemptiondomain ) or
 	 ( t1 == mlsnetoutbound ) or
 	 ( t1 == unlabeled_t ));
 
@@ -349,7 +350,7 @@ mlsconstrain { packet } { forward_out }
 
 # the peer/packet recv op
 mlsconstrain { peer packet } { recv }
-	(( l1 dom l2 ) or
+	(( l1 dom l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsnetreadtoclr ) and ( h1 dom l2 )) or
 	 ( t1 == mlsnetread ));
 
@@ -363,22 +364,22 @@ mlsconstrain { peer packet } { recv }
 # new process labels must be dominated by the relabeling subjects clearance
 # and sensitivity level changes require privilege
 mlsconstrain process transition
-	(( h1 dom h2 ) and
+	((( h1 dom h2 ) and
 	 (( l1 eq l2 ) or ( t1 == mlsprocsetsl ) or
-	  (( t1 == privrangetrans ) and ( t2 == mlsrangetrans ))));
+	  (( t1 == privrangetrans ) and ( t2 == mlsrangetrans )))) or ( t1 == mlsexemptiondomain ));
 mlsconstrain process dyntransition
-	(( h1 dom h2 ) and
-	 (( l1 eq l2 ) or ( t1 == mlsprocsetsl )));
+	((( h1 dom h2 ) and
+	 (( l1 eq l2 ) or ( t1 == mlsprocsetsl ))) or ( t1 == mlsexemptiondomain ));
 
 # all the process "read" ops
 mlsconstrain process { getsched getsession getpgid getcap getattr ptrace share }
-	(( l1 dom l2 ) or
+	(( l1 dom l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsprocreadtoclr ) and ( h1 dom l2 )) or
 	 ( t1 == mlsprocread ));
 
 # all the process "write" ops (note the check is equality on the low level)
 mlsconstrain process { sigkill sigstop signal setsched setpgid setcap setexec setfscreate setsockcreate setcurrent ptrace share }
-	(( l1 eq l2 ) or
+	(( l1 eq l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsprocwritetoclr ) and ( h1 dom l2 ) and ( l1 domby l2 )) or
 	 ( t1 == mlsprocwrite ));
 
@@ -434,13 +435,13 @@ mlsconstrain process { sigkill sigstop signal setsched setpgid setcap setexec se
 
 # the x_drawable "read" ops (implicit single level)
 mlsconstrain x_drawable { read blend getattr list_child list_property get_property receive }
-	(( l1 dom l2 ) or
+	(( l1 dom l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsxwinreadtoclr ) and ( h1 dom l2 )) or
 	 ( t1 == mlsxwinread ));
 
 # the x_drawable "write" ops (implicit single level)
 mlsconstrain x_drawable { create destroy write setattr add_child remove_child send manage }
-	(( l1 eq l2 ) or
+	(( l1 eq l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsxwinwritetoclr ) and ( h1 dom l2 ) and ( l1 domby l2 )) or
 	 ( t1 == mlsxwinwrite ));
 
@@ -453,13 +454,13 @@ mlsconstrain x_drawable { create destroy write setattr add_child remove_child se
 
 # the x_gc "read" ops (implicit single level)
 mlsconstrain x_gc { getattr use }
-	(( l1 dom l2 ) or
+	(( l1 dom l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsxwinreadtoclr ) and ( h1 dom l2 )) or
 	 ( t1 == mlsxwinread ));
 
 # the x_gc "write" ops (implicit single level)
 mlsconstrain x_gc { create destroy setattr }
-	(( l1 eq l2 ) or
+	(( l1 eq l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsxwinwritetoclr ) and ( h1 dom l2 ) and ( l1 domby l2 )) or
 	 ( t1 == mlsxwinwrite ));
 
@@ -470,13 +471,13 @@ mlsconstrain x_gc { create destroy setattr }
 
 # the x_font "read" ops (implicit single level)
 mlsconstrain x_font { use }
-	(( l1 dom l2 ) or
+	(( l1 dom l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsxwinreadtoclr ) and ( h1 dom l2 )) or
 	 ( t1 == mlsxwinread ));
 
 # the x_font "write" ops (implicit single level)
 mlsconstrain x_font { create destroy add_glyph remove_glyph }
-	(( l1 eq l2 ) or
+	(( l1 eq l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsxwinwritetoclr ) and ( h1 dom l2 ) and ( l1 domby l2 )) or
 	 ( t1 == mlsxwinwrite ));
 
@@ -490,14 +491,14 @@ mlsconstrain x_font { create destroy add_glyph remove_glyph }
 
 # the x_colormap "read" ops (implicit single level)
 mlsconstrain x_colormap { read getattr use }
-	(( l1 dom l2 ) or
+	(( l1 dom l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsxwinreadtoclr ) and ( h1 dom l2 )) or
 	 ( t1 == mlsxwinreadcolormap ) or
 	 ( t1 == mlsxwinread ));
 
 # the x_colormap "write" ops (implicit single level)
 mlsconstrain x_colormap { create destroy write add_color remove_color install uninstall }
-	(( l1 eq l2 ) or
+	(( l1 eq l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsxwinwritetoclr ) and ( h1 dom l2 ) and ( l1 domby l2 )) or
 	 ( t1 == mlsxwinwritecolormap ) or
 	 ( t1 == mlsxwinwrite ));
@@ -509,14 +510,14 @@ mlsconstrain x_colormap { create destroy write add_color remove_color install un
 
 # the x_property "read" ops (implicit single level)
 mlsconstrain x_property { read getattr }
-	(( l1 dom l2 ) or
+	(( l1 dom l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsxwinreadtoclr ) and ( h1 dom l2 )) or
 	 ( t1 == mlsxwinreadproperty ) or
 	 ( t1 == mlsxwinread ));
 
 # the x_property "write" ops (implicit single level)
 mlsconstrain x_property { create destroy write append setattr }
-	(( l1 eq l2 ) or
+	(( l1 eq l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsxwinwritetoclr ) and ( h1 dom l2 ) and ( l1 domby l2 )) or
 	 ( t1 == mlsxwinwriteproperty ) or
 	 ( t1 == mlsxwinwrite ));
@@ -528,14 +529,14 @@ mlsconstrain x_property { create destroy write append setattr }
 
 # the x_selection "read" ops (implicit single level)
 mlsconstrain x_selection { read getattr }
-	(( l1 dom l2 ) or
+	(( l1 dom l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsxwinreadtoclr ) and ( h1 dom l2 )) or
 	 ( t1 == mlsxwinreadselection ) or
 	 ( t1 == mlsxwinread ));
 
 # the x_selection "write" ops (implicit single level)
 mlsconstrain x_selection { write setattr }
-	(( l1 eq l2 ) or
+	(( l1 eq l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsxwinwritetoclr ) and ( h1 dom l2 ) and ( l1 domby l2 )) or
 	 ( t1 == mlsxwinwriteselection ) or
 	 ( t1 == mlsxwinwrite ));
@@ -547,13 +548,13 @@ mlsconstrain x_selection { write setattr }
 
 # the x_cursor "read" ops (implicit single level)
 mlsconstrain x_cursor { read getattr use }
-	(( l1 dom l2 ) or
+	(( l1 dom l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsxwinreadtoclr ) and ( h1 dom l2 )) or
 	 ( t1 == mlsxwinread ));
 
 # the x_cursor "write" ops (implicit single level)
 mlsconstrain x_cursor { create destroy write setattr }
-	(( l1 eq l2 ) or
+	(( l1 eq l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsxwinwritetoclr ) and ( h1 dom l2 ) and ( l1 domby l2 )) or
 	 ( t1 == mlsxwinwrite ));
 
@@ -564,13 +565,13 @@ mlsconstrain x_cursor { create destroy write setattr }
 
 # the x_client "read" ops (implicit single level)
 mlsconstrain x_client { getattr }
-	(( l1 dom l2 ) or
+	(( l1 dom l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsxwinreadtoclr ) and ( h1 dom l2 )) or
 	 ( t1 == mlsxwinread ));
 
 # the x_client "write" ops (implicit single level)
 mlsconstrain x_client { destroy setattr manage }
-	(( l1 eq l2 ) or
+	(( l1 eq l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsxwinwritetoclr ) and ( h1 dom l2 ) and ( l1 domby l2 )) or
 	 ( t1 == mlsxwinwrite ));
 
@@ -581,13 +582,13 @@ mlsconstrain x_client { destroy setattr manage }
 
 # the x_device "read" ops (implicit single level)
 mlsconstrain x_device { getattr use read getfocus grab }
-	(( l1 dom l2 ) or
+	(( l1 dom l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsxwinreadtoclr ) and ( h1 dom l2 )) or
 	 ( t1 == mlsxwinread ));
 
 # the x_device "write" ops (implicit single level)
 mlsconstrain x_device { setattr write setfocus bell force_cursor freeze manage }
-	(( l1 eq l2 ) or
+	(( l1 eq l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsxwinwritetoclr ) and ( h1 dom l2 ) and ( l1 domby l2 )) or
 	 ( t1 == mlsxwinwritexinput ) or
 	 ( t1 == mlsxwinwrite ));
@@ -615,13 +616,13 @@ mlsconstrain x_device { setattr write setfocus bell force_cursor freeze manage }
 
 # the x_resource "read" ops (implicit single level)
 mlsconstrain x_resource { read }
-	(( l1 dom l2 ) or
+	(( l1 dom l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsxwinreadtoclr ) and ( h1 dom l2 )) or
 	 ( t1 == mlsxwinread ));
 
 # the x_resource "write" ops (implicit single level)
 mlsconstrain x_resource { write }
-	(( l1 eq l2 ) or
+	(( l1 eq l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsxwinwritetoclr ) and ( h1 dom l2 ) and ( l1 domby l2 )) or
 	 ( t1 == mlsxwinwritexinput ) or
 	 ( t1 == mlsxwinwrite ));
@@ -633,13 +634,13 @@ mlsconstrain x_resource { write }
 
 # the x_event "read" ops (implicit single level)
 mlsconstrain x_event { receive }
-	(( l1 dom l2 ) or
+	(( l1 dom l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsxwinreadtoclr ) and ( h1 dom l2 )) or
 	 ( t1 == mlsxwinread ));
 
 # the x_event "write" ops (implicit single level)
 mlsconstrain x_event { send }
-	(( l1 eq l2 ) or
+	(( l1 eq l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsxwinwritetoclr ) and ( h1 dom l2 ) and ( l1 domby l2 )) or
 	 ( t1 == mlsxwinwritexinput ) or
 	 ( t1 == mlsxwinwrite ));
@@ -651,11 +652,11 @@ mlsconstrain x_event { send }
 
 # the x_application_data "paste" ops
 mlsconstrain x_application_data { paste }
-	( l1 domby l2 );
+	(( l1 domby l2 ) or ( t1 == mlsexemptiondomain ));
 
 # the x_application_data "paste_after_confirm" ops
 mlsconstrain x_application_data { paste_after_confirm }
-	( l1 dom l2 );
+	(( l1 dom l2 ) or ( t1 == mlsexemptiondomain ));
 
 
 #
@@ -664,13 +665,13 @@ mlsconstrain x_application_data { paste_after_confirm }
 
 # the x_pointer "read" ops
 mlsconstrain x_pointer { getattr use read getfocus grab }
-	(( l1 dom l2 ) or
+	(( l1 dom l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsxwinreadtoclr ) and ( h1 dom l2 )) or
 	 ( t1 == mlsxwinread ));
 
 # the x_pointer "write" ops (implicit single level)
 mlsconstrain x_pointer { setattr write setfocus bell force_cursor freeze manage }
-	(( l1 eq l2 ) or
+	(( l1 eq l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsxwinwritetoclr ) and ( h1 dom l2 ) and ( l1 domby l2 )) or
 	 ( t1 == mlsxwinwritexinput ) or
 	 ( t1 == mlsxwinwrite ));
@@ -682,13 +683,13 @@ mlsconstrain x_pointer { setattr write setfocus bell force_cursor freeze manage 
 
 # the x_keyboard "read" ops
 mlsconstrain x_keyboard { getattr use read getfocus grab }
-	(( l1 dom l2 ) or
+	(( l1 dom l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsxwinreadtoclr ) and ( h1 dom l2 )) or
 	 ( t1 == mlsxwinread ));
 
 # the x_keyboard "write" ops (implicit single level)
 mlsconstrain x_keyboard { setattr write setfocus bell force_cursor freeze manage }
-	(( l1 eq l2 ) or
+	(( l1 eq l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsxwinwritetoclr ) and ( h1 dom l2 ) and ( l1 domby l2 )) or
 	 ( t1 == mlsxwinwritexinput ) or
 	 ( t1 == mlsxwinwrite ));
@@ -700,7 +701,7 @@ mlsconstrain x_keyboard { setattr write setfocus bell force_cursor freeze manage
 #
 
 mlsconstrain dbus { send_msg }
-	(( l1 eq l2 ) or
+	(( l1 eq l2 ) or ( t1 == mlsexemptiondomain ) or
 	 ( t1 == mlsdbussend ) or
 	 ( t2 == mlsdbusrecv ));
 
@@ -725,18 +726,18 @@ mlsconstrain dbus { send_msg }
 #
 
 mlsconstrain association { recvfrom }
-	((( l1 dom l2 ) and ( l1 domby h2 )) or
+	(((( l1 dom l2 ) and ( l1 domby h2 )) or
 	 (( t1 == mlsnetreadtoclr ) and ( h1 dom l2 )) or
 	 ( t1 == mlsnetread ) or
-	 ( t2 == unlabeled_t ));
+	 ( t2 == unlabeled_t )) or ( t1 == mlsexemptiondomain ));
 
 mlsconstrain association { sendto }
-	(( l1 eq l2 ) or
+	(( l1 eq l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsnetwriteranged ) and ( l1 dom l2 ) and ( l1 domby h2 )) or
 	 ( t2 == unlabeled_t ));
 
 mlsconstrain association { polmatch }
-	(( l1 dom l2 ) and ( h1 domby h2 ));
+	((( l1 dom l2 ) and ( h1 domby h2 )) or ( t1 == mlsexemptiondomain ));
 
 
 
@@ -745,7 +746,7 @@ mlsconstrain association { polmatch }
 #
 
 mlsconstrain context contains
-	(( h1 dom h2 ) and ( l1 domby l2));
+	((( h1 dom h2 ) and ( l1 domby l2)) or ( t1 == mlsexemptiondomain ));
 
 #
 # MLS policy for database classes
@@ -753,142 +754,142 @@ mlsconstrain context contains
 
 # make sure these database classes are "single level"
 mlsconstrain { db_sequence db_view db_procedure db_language db_blob } { create relabelto }
-	( l2 eq h2 );
+	(( l2 eq h2 ) or ( t1 == mlsexemptiondomain ));
 
 mlsconstrain { db_tuple } { insert relabelto }
-	( l2 eq h2 );
+	(( l2 eq h2 ) or ( t1 == mlsexemptiondomain ));
 
 # new database labels must be dominated by the relabeling subjects clearance
 mlsconstrain { db_database db_schema db_table db_column } { relabelto }
-	( h1 dom h2 );
+	(( h1 dom h2 ) or ( t1 == mlsexemptiondomain ));
 
 # the database "read" ops (note the check is dominance of the low level)
 mlsconstrain { db_database } { getattr access get_param }
-	(( l1 dom l2 ) or
+	(( l1 dom l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsdbreadtoclr ) and ( h1 dom l2 )) or
 	 ( t1 == mlsdbread ) or
 	 ( t2 == mlstrustedobject ));
 
 mlsconstrain { db_schema } { getattr search }
-	(( l1 dom l2 ) or
+	(( l1 dom l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsdbreadtoclr ) and ( h1 dom l2 )) or
 	 ( t1 == mlsdbread ) or
 	 ( t2 == mlstrustedobject ));
 
 mlsconstrain { db_table } { getattr select lock }
-	(( l1 dom l2 ) or
+	(( l1 dom l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsdbreadtoclr ) and ( h1 dom l2 )) or
 	 ( t1 == mlsdbread ) or
 	 ( t2 == mlstrustedobject ));
 
 mlsconstrain { db_column } { getattr select }
-	(( l1 dom l2 ) or
+	(( l1 dom l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsdbreadtoclr ) and ( h1 dom l2 )) or
 	 ( t1 == mlsdbread ) or
 	 ( t2 == mlstrustedobject ));
 
 mlsconstrain { db_sequence } { getattr get_value next_value }
-	(( l1 dom l2 ) or
+	(( l1 dom l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsdbreadtoclr ) and ( h1 dom l2 )) or
 	 ( t1 == mlsdbread ) or
 	 ( t2 == mlstrustedobject ));
 
 mlsconstrain { db_view } { getattr expand }
-	(( l1 dom l2 ) or
+	(( l1 dom l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsdbreadtoclr ) and ( h1 dom l2 )) or
 	 ( t1 == mlsdbread ) or
 	 ( t2 == mlstrustedobject ));
 
 mlsconstrain { db_procedure } { getattr execute entrypoint install }
-	(( l1 dom l2 ) or
+	(( l1 dom l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsdbreadtoclr ) and ( h1 dom l2 )) or
 	 ( t1 == mlsdbread ) or
 	 ( t2 == mlstrustedobject ));
 
 mlsconstrain { db_language } { getattr execute }
-	(( l1 dom l2 ) or
+	(( l1 dom l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsdbreadtoclr ) and ( h1 dom l2 )) or
 	 ( t1 == mlsdbread ) or
 	 ( t2 == mlstrustedobject ));
 
 mlsconstrain { db_blob } { getattr read export }
-	(( l1 dom l2 ) or
+	(( l1 dom l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsdbreadtoclr ) and ( h1 dom l2 )) or
 	 ( t1 == mlsdbread ) or
 	 ( t2 == mlstrustedobject ));
 
 mlsconstrain { db_tuple } { use select }
-	(( l1 dom l2 ) or
+	(( l1 dom l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsdbreadtoclr ) and ( h1 dom l2 )) or
 	 ( t1 == mlsdbread ) or
 	 ( t2 == mlstrustedobject ));
 
 # the "single level" database "write" ops
 mlsconstrain { db_database } { create drop setattr relabelfrom install_module load_module set_param }
-	(( l1 eq l2 ) or
+	(( l1 eq l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsdbwritetoclr ) and ( h1 dom l2 ) and ( l1 domby l2 )) or
 	 (( t2 == mlsdbwriteinrange ) and ( l1 dom l2 ) and ( h1 domby h2 )) or
 	 ( t1 == mlsdbwrite ) or
 	 ( t2 == mlstrustedobject ));
 
 mlsconstrain { db_schema } { create drop setattr relabelfrom add_name remove_name }
-	(( l1 eq l2 ) or
+	(( l1 eq l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsdbwritetoclr ) and ( h1 dom l2 ) and ( l1 domby l2 )) or
 	 (( t2 == mlsdbwriteinrange ) and ( l1 dom l2 ) and ( h1 domby h2 )) or
 	 ( t1 == mlsdbwrite ) or
 	 ( t2 == mlstrustedobject ));
 
 mlsconstrain { db_table } { create drop setattr relabelfrom update insert delete }
-	(( l1 eq l2 ) or
+	(( l1 eq l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsdbwritetoclr ) and ( h1 dom l2 ) and ( l1 domby l2 )) or
 	 (( t2 == mlsdbwriteinrange ) and ( l1 dom l2 ) and ( h1 domby h2 )) or
 	 ( t1 == mlsdbwrite ) or
 	 ( t2 == mlstrustedobject ));
 
 mlsconstrain { db_column } { create drop setattr relabelfrom update insert }
-	(( l1 eq l2 ) or
+	(( l1 eq l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsdbwritetoclr ) and ( h1 dom l2 ) and ( l1 domby l2 )) or
 	 (( t2 == mlsdbwriteinrange ) and ( l1 dom l2 ) and ( h1 domby h2 )) or
 	 ( t1 == mlsdbwrite ) or
 	 ( t2 == mlstrustedobject ));
 
 mlsconstrain { db_sequence } { create drop setattr relabelfrom set_value }
-	(( l1 eq l2 ) or
+	(( l1 eq l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsdbwritetoclr ) and ( h1 dom l2 ) and ( l1 domby l2 )) or
 	 (( t2 == mlsdbwriteinrange ) and ( l1 dom l2 ) and ( h1 domby h2 )) or
 	 ( t1 == mlsdbwrite ) or
 	 ( t2 == mlstrustedobject ));
 
 mlsconstrain { db_view } { create drop setattr relabelfrom }
-	(( l1 eq l2 ) or
+	(( l1 eq l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsdbwritetoclr ) and ( h1 dom l2 ) and ( l1 domby l2 )) or
 	 (( t2 == mlsdbwriteinrange ) and ( l1 dom l2 ) and ( h1 domby h2 )) or
 	 ( t1 == mlsdbwrite ) or
 	 ( t2 == mlstrustedobject ));
 
 mlsconstrain { db_procedure } { create drop setattr relabelfrom }
-	(( l1 eq l2 ) or
+	(( l1 eq l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsdbwritetoclr ) and ( h1 dom l2 ) and ( l1 domby l2 )) or
 	 (( t2 == mlsdbwriteinrange ) and ( l1 dom l2 ) and ( h1 domby h2 )) or
 	 ( t1 == mlsdbwrite ) or
 	 ( t2 == mlstrustedobject ));
 
 mlsconstrain { db_language } { create drop setattr relabelfrom }
-	(( l1 eq l2 ) or
+	(( l1 eq l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsdbwritetoclr ) and ( h1 dom l2 ) and ( l1 domby l2 )) or
 	 (( t2 == mlsdbwriteinrange ) and ( l1 dom l2 ) and ( h1 domby h2 )) or
 	 ( t1 == mlsdbwrite ) or
 	 ( t2 == mlstrustedobject ));
 
 mlsconstrain { db_blob } { create drop setattr relabelfrom write import }
-	(( l1 eq l2 ) or
+	(( l1 eq l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsdbwritetoclr ) and ( h1 dom l2 ) and ( l1 domby l2 )) or
 	 (( t2 == mlsdbwriteinrange ) and ( l1 dom l2 ) and ( h1 domby h2 )) or
 	 ( t1 == mlsdbwrite ) or
 	 ( t2 == mlstrustedobject ));
 
 mlsconstrain { db_tuple } { relabelfrom update insert delete }
-	(( l1 eq l2 ) or
+	(( l1 eq l2 ) or ( t1 == mlsexemptiondomain ) or
 	 (( t1 == mlsdbwritetoclr ) and ( h1 dom l2 ) and ( l1 domby l2 )) or
 	 (( t2 == mlsdbwriteinrange ) and ( l1 dom l2 ) and ( h1 domby h2 )) or
 	 ( t1 == mlsdbwrite ) or
@@ -896,13 +897,13 @@ mlsconstrain { db_tuple } { relabelfrom update insert delete }
 
 # the database upgrade/downgrade rule
 mlsvalidatetrans { db_database db_schema db_table db_sequence db_view db_procedure db_language db_column db_tuple db_blob }
-	((( l1 eq l2 ) or
+	(((( l1 eq l2 ) or
 	  (( t3 == mlsdbupgrade ) and ( l1 domby l2 )) or
 	  (( t3 == mlsdbdowngrade ) and ( l1 dom l2 )) or
 	  (( t3 == mlsdbdowngrade ) and ( l1 incomp l2 ))) and
 	 (( l1 eq h2 ) or
 	  (( t3 == mlsdbupgrade ) and ( h1 domby h2 )) or
 	  (( t3 == mlsdbdowngrade ) and ( h1 dom h2 )) or
-	  (( t3 == mlsdbdowngrade ) and ( h1 incomp h2 ))));
+	  (( t3 == mlsdbdowngrade ) and ( h1 incomp h2 )))) or ( t1 == mlsexemptiondomain ));
 
 ') dnl end enable_mls

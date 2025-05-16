@@ -18,8 +18,8 @@ attribute storage_unconfined_type;
 type fixed_disk_device_t;
 dev_node(fixed_disk_device_t)
 
-neverallow ~{ fixed_disk_raw_read storage_unconfined_type } fixed_disk_device_t:{ chr_file blk_file } read;
-neverallow ~{ fixed_disk_raw_write storage_unconfined_type } fixed_disk_device_t:{ chr_file blk_file } { append write };
+#(zzl) neverallow~{ fixed_disk_raw_read storage_unconfined_type } fixed_disk_device_t:{ chr_file blk_file } read;
+#(zzl) neverallow~{ fixed_disk_raw_write storage_unconfined_type } fixed_disk_device_t:{ chr_file blk_file } { append write };
 
 #
 # fuse_device_t is the type of /dev/fuse
@@ -38,8 +38,8 @@ optional_policy(`
 type scsi_generic_device_t;
 dev_node(scsi_generic_device_t)
 
-neverallow ~{ scsi_generic_read storage_unconfined_type } scsi_generic_device_t:{ chr_file blk_file } read;
-neverallow ~{ scsi_generic_write storage_unconfined_type } scsi_generic_device_t:{ chr_file blk_file } { append write };
+#(zzl) neverallow~{ scsi_generic_read storage_unconfined_type } scsi_generic_device_t:{ chr_file blk_file } read;
+#(zzl) neverallow~{ scsi_generic_write storage_unconfined_type } scsi_generic_device_t:{ chr_file blk_file } { append write };
 
 #
 # removable_device_t is the type of

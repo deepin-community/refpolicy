@@ -7,6 +7,14 @@ policy_module(wm)
 
 attribute wm_domain;
 
+
+## <desc>
+##      <p>
+##      Grant the window manager domains write access to xdg data
+##      </p>
+## </desc>
+gen_tunable(`wm_write_xdg_data', false)
+
 type wm_exec_t;
 corecmd_executable_file(wm_exec_t)
 
@@ -39,6 +47,7 @@ files_tmp_filetrans(wm_domain, wm_tmp_t, { dir file lnk_file })
 manage_dirs_pattern(wm_domain, wm_tmpfs_t, wm_tmpfs_t)
 manage_files_pattern(wm_domain, wm_tmpfs_t, wm_tmpfs_t)
 mmap_read_files_pattern(wm_domain, wm_tmpfs_t, wm_tmpfs_t)
+allow wm_domain wm_tmpfs_t:file execmod;
 manage_lnk_files_pattern(wm_domain, wm_tmpfs_t, wm_tmpfs_t)
 fs_tmpfs_filetrans(wm_domain, wm_tmpfs_t, { dir file lnk_file })
 

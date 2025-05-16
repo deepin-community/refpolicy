@@ -85,6 +85,8 @@ allow gpg_t self:fifo_file rw_fifo_file_perms;
 allow gpg_t self:tcp_socket { accept listen };
 allow gpg_t self:unix_stream_socket create_stream_socket_perms;
 
+can_exec(gpg_agent_t, gpg_agent_exec_t)
+
 manage_dirs_pattern(gpg_t, gpg_runtime_t, gpg_runtime_t)
 userdom_user_runtime_filetrans(gpg_t, gpg_runtime_t, dir, "gnupg")
 manage_sock_files_pattern(gpg_t, gpg_runtime_t, gpg_runtime_t)
@@ -139,6 +141,7 @@ miscfiles_read_localization(gpg_t)
 miscfiles_read_generic_certs(gpg_t)
 
 userdom_use_user_terminals(gpg_t)
+userdom_user_home_dir_filetrans_user_home_content(gpg_t, file)
 
 userdom_manage_user_tmp_dirs(gpg_t)
 userdom_manage_user_tmp_files(gpg_t)

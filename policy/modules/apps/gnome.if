@@ -101,6 +101,8 @@ template(`gnome_role_template',`
 	optional_policy(`
 		dbus_spec_session_domain($1, $1_gkeyringd_t, gkeyringd_exec_t)
 		dbus_system_bus_client($1_gkeyringd_t)
+		dbus_write_session_runtime_socket($1_gkeyringd_t)
+		dbus_getattr_session_runtime_socket($1_gkeyringd_t)
 
 		optional_policy(`
 			evolution_dbus_chat($1_gkeyringd_t)
@@ -109,6 +111,10 @@ template(`gnome_role_template',`
 		optional_policy(`
 			gnome_dbus_chat_gconfd($3)
 			gnome_dbus_chat_gkeyringd($1, $3)
+		')
+
+		optional_policy(`
+			systemd_dbus_chat_logind($1_gkeyringd_t)
 		')
 
 		optional_policy(`
@@ -813,4 +819,22 @@ interface(`gnome_mmap_gstreamer_orcexec',`
 	')
 
 	allow $1 gstreamer_orcexec_t:file mmap_exec_file_perms;
+')
+
+########################################
+## <summary>
+##	watch gnome_xdg_config_t dirs
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`gnome_watch_xdg_config_dirs',`
+	gen_require(`
+		type gnome_xdg_config_t;
+	')
+
+	allow $1 gnome_xdg_config_t:dir watch;
 ')

@@ -94,7 +94,11 @@ poldir := policy
 moddir := $(poldir)/modules
 flaskdir := $(poldir)/flask
 secclass := $(flaskdir)/security_classes
+ifeq "$(TYPE)" "usec"
+isids := $(flaskdir)/initial_usids
+else
 isids := $(flaskdir)/initial_sids
+endif
 avs := $(flaskdir)/access_vectors
 
 # local source layout
@@ -200,6 +204,14 @@ ifeq "$(TYPE)" "mcs"
 	gennetfilter += -c
 endif
 
+# enable USEC if requested.
+ifeq "$(TYPE)" "usec"
+	M4PARAM += -D enable_mcs=true -D enable_usec=true
+	override CHECKPOLICY += -M
+	override CHECKMODULE += -M
+	gennetfilter += -c
+endif
+
 # enable distribution-specific policy
 ifneq ($(DISTRO),)
 	M4PARAM += -D distro_$(DISTRO)=true
@@ -256,6 +268,7 @@ M4PARAM += -D mls_num_sens=$(MLS_SENS) -D mls_num_cats=$(MLS_CATS) -D mcs_num_ca
 # differently on different distros
 ifeq ($(DISTRO),debian)
 	CTAGS := ctags-exuberant
+	M4PARAM += -D use_alsa
 endif
 
 ifeq ($(DISTRO),gentoo)

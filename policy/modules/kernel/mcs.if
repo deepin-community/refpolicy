@@ -114,3 +114,21 @@ interface(`mcs_process_set_categories',`
 
 	typeattribute $1 mcssetcats;
 ')
+
+########################################
+## <summary>
+##	This domain is exemption for MCS rules.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain target for user exemption.
+##	</summary>
+## </param>
+#
+interface(`domain_mcs_exemption',`
+	gen_require(`
+		attribute mcsexemptiondomain;
+	')
+
+	typeattribute $1 mcsexemptiondomain;
+')

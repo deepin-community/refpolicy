@@ -71,3 +71,5 @@ attribute mlsfdshare;
 
 attribute mlsdbusrecv;
 attribute mlsdbussend;
+
+attribute mlsexemptiondomain;

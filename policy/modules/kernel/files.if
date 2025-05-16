@@ -454,6 +454,24 @@ interface(`files_dontaudit_getattr_all_tmpfs_files',`
 
 ########################################
 ## <summary>
+##	dontaudit getattr on tmpfs files
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain to not have stat on tmpfs files audited
+##	</summary>
+## </param>
+#
+interface(`files_dontaudit_tmpfs_file_getattr',`
+	gen_require(`
+		attribute tmpfsfile;
+	')
+
+	dontaudit $1 tmpfsfile:file getattr;
+')
+
+########################################
+## <summary>
 ##	Get the attributes of all directories.
 ## </summary>
 ## <param name="domain">
@@ -1463,6 +1481,25 @@ interface(`files_watch_all_dirs',`
 ')
 
 
+########################################
+## <summary>
+##	watch all directories of file_type
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`files_watch_all_file_type_dir',`
+	gen_require(`
+		attribute file_type;
+	')
+
+	allow $1 file_type:dir watch;
+')
+
+########################################
 ########################################
 ## <summary>
 ##	Read all non-authentication related
@@ -3602,6 +3639,35 @@ interface(`files_etc_filetrans',`
 	')
 
 	filetrans_pattern($1, etc_t, $2, $3, $4)
+')
+
+########################################
+## <summary>
+##	Create objects in /etc with type etc_t with specified
+##	name to overide default transition
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+## <param name="class">
+##	<summary>
+##	Object classes to be created.
+##	</summary>
+## </param>
+## <param name="name">
+##	<summary>
+##	The name of the object being created.
+##	</summary>
+## </param>
+#
+interface(`files_etc_filetrans_etc',`
+	gen_require(`
+		type etc_t;
+	')
+
+	filetrans_pattern($1, etc_t, etc_t, $2, $3)
 ')
 
 ########################################
@@ -6328,6 +6394,24 @@ interface(`files_read_var_lib_files',`
 
 	allow $1 var_lib_t:dir list_dir_perms;
 	read_files_pattern($1, { var_t var_lib_t }, var_lib_t)
+')
+
+########################################
+## <summary>
+##	map generic files in /var/lib.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`files_map_var_lib_files',`
+	gen_require(`
+		type var_lib_t;
+	')
+
+	allow $1 var_lib_t:file map;
 ')
 
 ########################################

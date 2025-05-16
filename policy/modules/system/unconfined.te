@@ -36,6 +36,7 @@ logging_send_syslog_msg(unconfined_t)
 logging_run_auditctl(unconfined_t, unconfined_r)
 
 mount_run_unconfined(unconfined_t, unconfined_r)
+mount_watch_runtime_files_reads(unconfined_t)
 
 seutil_run_setfiles(unconfined_t, unconfined_r)
 seutil_run_semanage(unconfined_t, unconfined_r)
@@ -67,10 +68,16 @@ ifdef(`init_systemd',`
 	init_pgm_spec_user_daemon_domain(unconfined_t)
 	allow unconfined_t self:system { reload start status stop };
 
+	systemd_use_passwd_agent_fds(unconfined_t)
+
 	optional_policy(`
 		systemd_dbus_chat_resolved(unconfined_t)
 		systemd_filetrans_passwd_runtime_dirs(unconfined_t)
 	')
+')
+
+tunable_policy(`user_execmod_tmpfs', `
+	userdom_execmod_user_tmpfs_files(unconfined_t)
 ')
 
 optional_policy(`
@@ -95,7 +102,11 @@ optional_policy(`
 ')
 
 optional_policy(`
-	cron_unconfined_role(unconfined, unconfined_t, unconfined_application_exec_domain, unconfined_r)
+	certbot_run(unconfined_t, unconfined_r)
+')
+
+optional_policy(`
+	cron_role(unconfined, unconfined_t, unconfined_application_exec_domain, unconfined_r)
 ')
 
 optional_policy(`
@@ -109,6 +120,10 @@ optional_policy(`
 
 optional_policy(`
 	ftp_run_ftpdctl(unconfined_t, unconfined_r)
+')
+
+optional_policy(`
+	fwupd_run(unconfined_t, unconfined_r)
 ')
 
 optional_policy(`

@@ -128,10 +128,16 @@ tunable_policy(`allow_java_execstack',`
 auth_use_nsswitch(java_t)
 
 corecmd_search_bin(java_t)
+corecmd_exec_bin(java_t)
 
 dev_read_sysfs(java_t)
 
+fs_read_cgroup_files(java_t)
+fs_search_cgroup_dirs(java_t)
+
 locallogin_use_fds(java_t)
+
+libs_exec_lib_files(java_t)
 
 userdom_read_user_tmp_files(java_t)
 userdom_use_user_terminals(java_t)

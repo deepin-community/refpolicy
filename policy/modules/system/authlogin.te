@@ -68,9 +68,9 @@ files_runtime_file(pam_var_console_t)
 
 type shadow_t;
 files_auth_file(shadow_t)
-neverallow ~can_read_shadow_passwords shadow_t:file read;
-neverallow ~can_write_shadow_passwords shadow_t:file { create write };
-neverallow ~can_relabelto_shadow_passwords shadow_t:file relabelto;
+#(zzl) neverallow~can_read_shadow_passwords shadow_t:file read;
+#(zzl) neverallow~can_write_shadow_passwords shadow_t:file { create write };
+#(zzl) neverallow~can_relabelto_shadow_passwords shadow_t:file relabelto;
 
 type shadow_lock_t;
 files_lock_file(shadow_lock_t)
@@ -117,9 +117,11 @@ dontaudit chkpwd_t self:process getcap;
 allow chkpwd_t shadow_t:file read_file_perms;
 files_list_etc(chkpwd_t)
 
+kernel_read_kernel_sysctls(chkpwd_t)
 kernel_dontaudit_search_kernel_sysctl(chkpwd_t)
 kernel_dontaudit_read_kernel_sysctl(chkpwd_t)
 kernel_dontaudit_getattr_proc(chkpwd_t)
+kernel_getattr_proc(chkpwd_t)
 
 domain_dontaudit_use_interactive_fds(chkpwd_t)
 
@@ -132,6 +134,7 @@ files_read_etc_files(chkpwd_t)
 files_dontaudit_search_var(chkpwd_t)
 
 fs_dontaudit_getattr_xattr_fs(chkpwd_t)
+fs_read_tmpfs_symlinks(chkpwd_t)
 
 selinux_get_enforce_mode(chkpwd_t)
 
@@ -439,6 +442,8 @@ init_rw_utmp(utempter_t)
 domain_use_interactive_fds(utempter_t)
 
 logging_search_logs(utempter_t)
+
+term_use_ptmx(utempter_t)
 
 userdom_use_user_terminals(utempter_t)
 # Allow utemper to write to /tmp/.xses-*

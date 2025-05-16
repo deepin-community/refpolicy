@@ -525,9 +525,10 @@ interface(`domain_signull_all_domains',`
 interface(`domain_sigstop_all_domains',`
 	gen_require(`
 		attribute domain;
+		attribute unkillable_domain;
 	')
 
-	allow $1 domain:process sigstop;
+	allow $1 { domain -unkillable_domain }:process sigstop;
 ')
 
 ########################################
@@ -563,9 +564,10 @@ interface(`domain_sigchld_all_domains',`
 interface(`domain_kill_all_domains',`
 	gen_require(`
 		attribute domain;
+		attribute unkillable_domain;
 	')
 
-	allow $1 domain:process sigkill;
+	allow $1 { domain -unkillable_domain }:process sigkill;
 	allow $1 self:capability kill;
 ')
 
@@ -631,7 +633,7 @@ interface(`domain_read_all_domains_state',`
 
 ########################################
 ## <summary>
-##	Get the attributes of all domains of all domains.
+##	Get the attributes of all domains
 ## </summary>
 ## <param name="domain">
 ##	<summary>
@@ -1555,4 +1557,22 @@ interface(`domain_unconfined',`
 	typeattribute $1 can_change_object_identity;
 	typeattribute $1 set_curr_context;
 	typeattribute $1 process_uncond_exempt;
+')
+
+########################################
+## <summary>
+##	Let domain to be unkillable.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain unkillable.
+##	</summary>
+## </param>
+#
+interface(`domain_unkillable',`
+	gen_require(`
+		attribute unkillable_domain;
+	')
+
+	typeattribute $1 unkillable_domain;
 ')

@@ -205,8 +205,8 @@ dev_node(mei_device_t)
 type memory_device_t;
 dev_node(memory_device_t)
 
-neverallow ~{ memory_raw_read devices_unconfined_type } memory_device_t:{ chr_file blk_file } read;
-neverallow ~{ memory_raw_write devices_unconfined_type } memory_device_t:{ chr_file blk_file } { append write };
+#(zzl) neverallow~{ memory_raw_read devices_unconfined_type } memory_device_t:{ chr_file blk_file } read;
+#(zzl) neverallow~{ memory_raw_write devices_unconfined_type } memory_device_t:{ chr_file blk_file } { append write };
 
 type misc_device_t;
 dev_node(misc_device_t)

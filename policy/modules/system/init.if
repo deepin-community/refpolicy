@@ -178,7 +178,11 @@ interface(`init_domain',`
 
 	role system_r types $1;
 
-	domtrans_pattern(init_t, $2, $1)
+	ifdef(`init_systemd', `
+		domtrans_pattern(init_t, $2, $1)
+		allow init_t $1:unix_stream_socket create_stream_socket_perms;
+		allow $1 init_t:unix_dgram_socket sendto;
+	')
 
 	allow init_t $1:process rlimitinh;
 
@@ -3773,6 +3777,24 @@ interface(`init_reload_all_units',`
 	')
 
 	allow $1 { init_script_file_type systemdunit }:service reload;
+')
+
+#######################################
+## <summary>
+##	getattr all systemd unit files.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`init_getattr_all_units',`
+	gen_require(`
+		attribute systemdunit;
+	')
+
+	allow $1 systemdunit:file getattr;
 ')
 
 ########################################

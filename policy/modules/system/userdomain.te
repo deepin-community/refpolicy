@@ -80,6 +80,16 @@ attribute userdomain;
 # unprivileged user domains
 attribute unpriv_userdomain;
 
+# all login user domains
+attribute login_userdomain;
+
+# for /run/user/%{USERID}/gvfs
+userdom_mounton_user_tmp_dirs(login_userdomain)
+
+# for startdde
+systemd_read_hwdb(login_userdomain)
+kernel_getattr_message_if(login_userdomain)
+
 attribute user_home_content_type;
 
 # dirs/files/etc created in /run/user/%{USERID}/

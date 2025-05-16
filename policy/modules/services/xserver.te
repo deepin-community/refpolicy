@@ -173,7 +173,7 @@ fs_associate_tmpfs(xconsole_device_t)
 files_associate_tmp(xconsole_device_t)
 
 type xdm_t;
-role xdm_r types xdm_t;
+role xdm_r types { xdm_t xserver_t };
 type xdm_exec_t;
 auth_login_pgm_domain(xdm_t)
 init_domain(xdm_t, xdm_exec_t)
@@ -306,6 +306,7 @@ term_use_ptmx(xauth_t)
 auth_use_nsswitch(xauth_t)
 
 userdom_use_user_terminals(xauth_t)
+userdom_user_tmp_filetrans(xauth_t, xauth_home_t, file)
 userdom_read_user_tmp_files(xauth_t)
 
 xserver_rw_xdm_tmp_files(xauth_t)
@@ -341,6 +342,9 @@ allow xdm_t self:unix_dgram_socket create_socket_perms;
 allow xdm_t self:socket create_socket_perms;
 allow xdm_t self:appletalk_socket create_socket_perms;
 allow xdm_t self:key { link search write };
+
+# for dbus-broker
+allow xdm_t self:system { start reload };
 
 allow xdm_t xconsole_device_t:fifo_file { read_fifo_file_perms setattr_fifo_file_perms };
 
@@ -417,6 +421,13 @@ kernel_view_key(xdm_t)
 
 corecmd_exec_shell(xdm_t)
 corecmd_exec_bin(xdm_t)
+corecmd_shell_entry_type(xdm_t)
+
+
+# for start deepin_elf_verify program
+optional_policy(`
+    deepin_exec_elf_verify(xdm_t)
+')
 
 dev_read_rand(xdm_t)
 dev_read_sysfs(xdm_t)
@@ -459,6 +470,9 @@ files_create_boot_flag(xdm_t)
 
 fs_getattr_all_fs(xdm_t)
 fs_search_auto_mountpoints(xdm_t)
+fs_watch_memory_pressure(xdm_t)
+
+mount_watch_reads_runtime_files(xdm_t)
 
 storage_dontaudit_read_fixed_disk(xdm_t)
 storage_dontaudit_write_fixed_disk(xdm_t)
@@ -482,6 +496,8 @@ auth_write_login_records(xdm_t)
 
 # Run telinit->init to shutdown.
 init_telinit(xdm_t)
+
+init_pgm_entrypoint(xdm_t)
 
 libs_exec_lib_files(xdm_t)
 
@@ -561,6 +577,10 @@ optional_policy(`
 ')
 
 optional_policy(`
+	avahi_dbus_chat(xdm_t)
+')
+
+optional_policy(`
 	consoletype_exec(xdm_t)
 ')
 
@@ -576,6 +596,10 @@ optional_policy(`
 	')
 
 	optional_policy(`
+		bluetooth_dbus_chat(xdm_t)
+	')
+
+	optional_policy(`
 		colord_dbus_chat(xdm_t)
 	')
 
@@ -584,6 +608,8 @@ optional_policy(`
 	')
 
 	optional_policy(`
+		auth_use_pam_systemd(xdm_t)
+		systemd_dbus_chat_hostnamed(xdm_t)
 		systemd_read_logind_runtime_files(xdm_t)
 	')
 ')
@@ -612,6 +638,10 @@ optional_policy(`
 ')
 
 optional_policy(`
+	modemmanager_dbus_chat(xdm_t)
+')
+
+optional_policy(`
 	# Do not audit attempts to check whether user root has email
 	mta_dontaudit_getattr_spool_files(xdm_t)
 ')
@@ -630,6 +660,10 @@ optional_policy(`
 
 optional_policy(`
 	shutdown_domtrans(xdm_t)
+')
+
+optional_policy(`
+	systemd_dbus_chat_locale(xdm_t)
 ')
 
 optional_policy(`

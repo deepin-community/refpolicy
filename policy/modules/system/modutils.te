@@ -33,7 +33,7 @@ ifdef(`init_systemd',`
 # insmod local policy
 #
 
-allow kmod_t self:capability { dac_override net_raw sys_nice sys_tty_config };
+allow kmod_t self:capability { dac_override dac_read_search net_raw sys_nice sys_tty_config };
 allow kmod_t self:process { execmem sigchld sigkill signal signull sigstop };
 # for the radeon/amdgpu modules
 dontaudit kmod_t self:capability sys_admin;
@@ -45,6 +45,8 @@ allow kmod_t self:key write;
 # Read module config and dependency information
 list_dirs_pattern(kmod_t, modules_conf_t, modules_conf_t)
 read_files_pattern(kmod_t, modules_conf_t, modules_conf_t)
+allow kmod_t modules_conf_t:lnk_file read_lnk_file_perms;
+
 allow kmod_t modules_dep_t:file map;
 list_dirs_pattern(kmod_t, modules_dep_t, modules_dep_t)
 manage_files_pattern(kmod_t, modules_dep_t, modules_dep_t)
@@ -110,10 +112,12 @@ init_use_script_ptys(kmod_t)
 logging_send_syslog_msg(kmod_t)
 logging_search_logs(kmod_t)
 
+miscfiles_read_generic_certs(kmod_t)
 miscfiles_read_localization(kmod_t)
 
 seutil_read_file_contexts(kmod_t)
 
+term_use_unallocated_ttys(kmod_t)
 userdom_use_user_terminals(kmod_t)
 
 userdom_dontaudit_search_user_home_dirs(kmod_t)
@@ -137,10 +141,18 @@ optional_policy(`
 ')
 
 optional_policy(`
+	bootloader_manage_tmp_files(kmod_t)
+	bootloader_map_tmp_files(kmod_t)
+	bootloader_read_tmp_lnk_files(kmod_t)
+')
+
+optional_policy(`
 	# for postinst of a new kernel package
 	dpkg_manage_script_tmp_files(kmod_t)
 	dpkg_map_script_tmp_files(kmod_t)
 	dpkg_read_script_tmp_symlinks(kmod_t)
+	apt_use_fds(kmod_t)
+	apt_use_ptys(kmod_t)
 ')
 
 optional_policy(`

@@ -108,6 +108,11 @@ optional_policy(`
 	xdg_read_config_files(mon_t)
 ')
 
+optional_policy(`
+	# for config of xmpp sending program
+	xdg_read_config_files(mon_t)
+')
+
 ########################################
 #
 # Local policy
@@ -159,6 +164,10 @@ optional_policy(`
 	snmp_read_snmp_var_lib_files(mon_net_test_t)
 ')
 
+optional_policy(`
+	snmp_read_snmp_var_lib_files(mon_net_test_t)
+')
+
 ########################################
 #
 # Local policy
@@ -169,7 +178,7 @@ optional_policy(`
 #
 
 # sys_ptrace is for reading /proc/1/maps etc
-allow mon_local_test_t self:capability { dac_override dac_read_search setgid setuid sys_admin sys_ptrace };
+allow mon_local_test_t self:capability { dac_override dac_read_search setgid setuid sys_rawio sys_ptrace sys_admin };
 allow mon_local_test_t self:fifo_file rw_fifo_file_perms;
 allow mon_local_test_t self:process { getsched sigkill signal sigstop };
 allow mon_local_test_t self:cap_userns sys_ptrace;

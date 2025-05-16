@@ -172,7 +172,7 @@ allow auditd_t self:tcp_socket create_stream_socket_perms;
 
 allow auditd_t auditd_etc_t:dir list_dir_perms;
 allow auditd_t auditd_etc_t:file read_file_perms;
-dontaudit auditd_t auditd_etc_t:file map;
+allow auditd_t auditd_etc_t:file map;
 
 manage_files_pattern(auditd_t, auditd_log_t, auditd_log_t)
 allow auditd_t auditd_log_t:dir setattr;
@@ -395,7 +395,7 @@ optional_policy(`
 # sys_admin for the integrated klog of syslog-ng and metalog
 # sys_nice for rsyslog
 allow syslogd_t self:capability { chown dac_override fsetid setgid setuid sys_admin sys_nice sys_resource sys_tty_config };
-dontaudit syslogd_t self:capability { sys_ptrace };
+dontaudit syslogd_t self:capability { net_admin sys_ptrace };
 dontaudit syslogd_t self:cap_userns { kill sys_ptrace };
 # setpgid for metalog
 # setrlimit for syslog-ng
@@ -504,13 +504,14 @@ seutil_read_config(syslogd_t)
 
 userdom_dontaudit_use_unpriv_user_fds(syslogd_t)
 userdom_dontaudit_search_user_home_dirs(syslogd_t)
+userdom_search_user_runtime_root(syslogd_t)
 
 ifdef(`init_systemd',`
 	# for systemd-journal
-	allow syslogd_t self:capability audit_control;
 	allow syslogd_t self:netlink_audit_socket connected_socket_perms;
 	allow syslogd_t self:capability2 audit_read;
-	allow syslogd_t self:capability { chown setgid setuid sys_ptrace };
+	allow syslogd_t self:capability { chown setgid setuid sys_ptrace audit_control };
+	allow syslogd_t self:cap_userns sys_ptrace;
 	allow syslogd_t self:netlink_audit_socket { getattr getopt nlmsg_write read setopt write };
 
 	# remove /run/log/journal when switching to permanent storage
@@ -529,6 +530,7 @@ ifdef(`init_systemd',`
 
 	domain_getattr_all_domains(syslogd_t)
 	domain_read_all_domains_state(syslogd_t)
+	domain_signull_all_domains(syslogd_t)
 
 	fs_list_cgroup_dirs(syslogd_t)
 	fs_watch_memory_pressure(syslogd_t)
@@ -548,11 +550,14 @@ ifdef(`init_systemd',`
 	logging_send_syslog_msg(syslogd_t)
 
 	systemd_manage_journal_files(syslogd_t)
+	systemd_search_user_runtime(syslogd_t)
 	systemd_watch_journal_dirs(syslogd_t)
 	systemd_relabelfrom_journal_files(syslogd_t)
 	systemd_relabelto_journal_files(syslogd_t)
 
 	udev_read_runtime_files(syslogd_t)
+	userdom_list_user_tmp(syslogd_t)
+	userdom_read_user_tmp_symlinks(syslogd_t)
 
 	# journald traverses /run/user/UID (which is mode 0700) to read symlinks in /run/user/UID/systemd/units/
 	allow syslogd_t self:capability dac_read_search;
