@@ -1,3 +1,9 @@
+refpolicy (2:2.20240723-2deepin15) unstable; urgency=medium
+
+  * fix: usec: 添加deepin_system_service_t允许其杀deepin_unkillable_t
+
+ -- zhangya <zhangya@uniontech.com>  Fri, 31 Oct 2025 10:36:49 +0800
+
 refpolicy (2:2.20240723-2deepin14) unstable; urgency=medium
 
   * fix: usec: 禁止apt,dpkg_t域转换到deepin_immutable
