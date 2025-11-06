@@ -29,7 +29,7 @@ Index: refpolicy/policy/modules/services/deepin_perm_control.te
  allow deepin_security_server_domain self:key_socket *;
  allow deepin_security_server_domain self:filesystem *;
  allow deepin_security_server_domain self:system *;
-@@ -868,31 +872,37 @@ allow deepin_home_sec_t self:filesystem
+@@ -868,31 +872,35 @@ allow deepin_home_sec_t self:filesystem
  allow deepin_executable_file_type deepin_home_sec_t:file ~{ relabelfrom relabelto };
  allow deepin_executable_file_type deepin_home_sec_t:dir list_dir_perms;
  
@@ -62,35 +62,33 @@ Index: refpolicy/policy/modules/services/deepin_perm_control.te
 -	allow deepin_usec_t deepin_unkillable_t:service ~{ stop reload disable };
 -')
 \ No newline at end of file
-+        # umount管控
-+        require {
-+                class filesystem { unmount remount };
-+                type usec_immutable_fs_t;
-+                type deepin_perm_manager_sidtwo_t;
-+        }
-+        type deepin_immutable_t;
-+        type deepin_unkillable_t;
-+        type deepin_system_service_t;
++    # umount管控
++    require {
++        class filesystem { unmount remount };
++        type usec_immutable_fs_t;
++        type deepin_perm_manager_sidtwo_t;
++    }
++    type deepin_immutable_t;
++    type deepin_unkillable_t;
++    type deepin_system_service_t;
 +
-+        deepin_app_domain_set(deepin_immutable_t);
-+        allow deepin_immutable_t usec_immutable_fs_t:filesystem { unmount remount };
++    deepin_app_domain_set(deepin_immutable_t);
++    allow deepin_immutable_t usec_immutable_fs_t:filesystem { unmount remount };
 +
-+        type_transition deepin_immutable_t deepin_usec_t:process deepin_immutable_t;
-+        allow deepin_perm_manager_sidtwo_t usec_immutable_fs_t:filesystem { unmount remount };
-+        neverallow { apt_t dpkg_t } deepin_immutable_t:process { transition dyntransition };
++    type_transition deepin_immutable_t deepin_usec_t:process deepin_immutable_t;
++    allow deepin_perm_manager_sidtwo_t usec_immutable_fs_t:filesystem { unmount remount };
 +
++    deepin_app_domain_set(deepin_unkillable_t);
++    allow deepin_unkillable_t self:service *;
++    allow deepin_usec_t deepin_unkillable_t:process ~{ setcurrent setexec sigkill signal sigstop };
++    allow deepin_usec_t deepin_unkillable_t:service ~{ stop disable };
 +
-+        deepin_app_domain_set(deepin_unkillable_t);
-+        allow deepin_unkillable_t self:service *;
-+        allow deepin_usec_t deepin_unkillable_t:process ~{ setcurrent setexec sigkill signal sigstop };
-+        allow deepin_usec_t deepin_unkillable_t:service ~{ stop reload disable };
++    # 系统进程deepin_system_service_t，允许其杀deepin_unkillable_t防杀进程
++    # 例如lastrore-daemon结束系统升级,需要会杀死deepin_immutable_ctl来结束系统升级
 +
-+        # 系统进程deepin_system_service_t，允许其杀deepin_unkillable_t防杀进程
-+        # 例如lastrore-daemon结束系统升级,需要会杀死deepin_immutable_ctl来结束系统升级
-+
-+        deepin_app_domain_set(deepin_system_service_t);
-+        allow deepin_system_service_t deepin_unkillable_t:process *;
-+        allow deepin_system_service_t deepin_unkillable_t:service *;
-+        allow deepin_system_service_t deepin_immutable_t:process *;
-+        allow deepin_system_service_t deepin_immutable_t:service *;
++    deepin_app_domain_set(deepin_system_service_t);
++    allow deepin_system_service_t deepin_unkillable_t:process *;
++    allow deepin_system_service_t deepin_unkillable_t:service *;
++    allow deepin_system_service_t deepin_immutable_t:process *;
++    allow deepin_system_service_t deepin_immutable_t:service *;
 +')

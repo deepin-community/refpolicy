@@ -1,3 +1,9 @@
+refpolicy (2:2.20240723-2deepin16) unstable; urgency=medium
+
+  * fix: usec: 允许dpkg切换到deepin_immutable_t,避免无法设置拓展属性
+
+ -- zhangya <zhangya@uniontech.com>  Thu, 06 Nov 2025 19:28:49 +0800
+
 refpolicy (2:2.20240723-2deepin15) unstable; urgency=medium
 
   * fix: usec: 添加deepin_system_service_t允许其杀deepin_unkillable_t
