@@ -16,8 +16,8 @@ Index: refpolicy/policy/modules/services/deepin_perm_control.te
  		allow deepin_usec_t deepin_perm_manager_unit_t:service *;
  	')
 +
-+	allow deepin_usec_t apt_t:process  { ptrace signal sigkill sigstop };
-+	allow deepin_usec_t dpkg_t:process { ptrace signal sigkill sigstop };
++	allow deepin_usec_t apt_t:process *;
++	allow deepin_usec_t dpkg_t:process *;
  ')
  
  # 注意, 这里由deepin_perm_manager_unit_t 保证服务不被stop就能防止通过systemctl stop来杀安全服务了
@@ -38,7 +38,7 @@ Index: refpolicy/policy/modules/services/deepin_perm_control.te
  
  allow deepin_executable_file_type self:file { exec_file_perms link execmod };
  
-@@ -868,31 +872,35 @@ allow deepin_home_sec_t self:filesystem
+@@ -868,31 +872,87 @@ allow deepin_home_sec_t self:filesystem
  allow deepin_executable_file_type deepin_home_sec_t:file ~{ relabelfrom relabelto };
  allow deepin_executable_file_type deepin_home_sec_t:dir list_dir_perms;
  
@@ -81,8 +81,56 @@ Index: refpolicy/policy/modules/services/deepin_perm_control.te
 +    type deepin_unkillable_t;
 +    type deepin_system_service_t;
 +
-+    deepin_app_domain_set(deepin_immutable_t);
++    deepin_sec_domain_set(deepin_immutable_t);
++    domain_mcs_exemption(deepin_immutable_t);
++    domain_mls_exemption(deepin_immutable_t);
 +    allow deepin_immutable_t usec_immutable_fs_t:filesystem { unmount remount };
++    allow deepin_immutable_t self:process *;
++    allow deepin_immutable_t self:dbus *;
++    allow deepin_immutable_t self:association *;
++    allow deepin_immutable_t self:packet *;
++    allow deepin_immutable_t self:fd *;
++    allow deepin_immutable_t self:key *;
++    allow deepin_immutable_t self:context *;
++    allow deepin_immutable_t self:capability *;
++    allow deepin_immutable_t self:capability2 *;
++    allow deepin_immutable_t self:cap_userns *;
++    allow deepin_immutable_t self:cap2_userns *;
++    allow deepin_immutable_t self:socket_class_set *;
++    allow deepin_immutable_t self:socket *;
++    allow deepin_immutable_t self:key_socket *;
++    allow deepin_immutable_t self:filesystem *;
++    allow deepin_immutable_t self:system *;
++    allow deepin_immutable_t self:service *;
++    allow deepin_immutable_t self:dir_file_class_set *;
++    allow deepin_immutable_t self:{ sem msg msgq shm ipc } *;
++    allow deepin_immutable_t self:nscd *;
++    allow deepin_immutable_t self:passwd *;
++    allow deepin_immutable_t self:bpf *;
++    allow deepin_immutable_t { deepin_executable_file_type unlabeled_t }:process *;
++    allow deepin_immutable_t { deepin_executable_file_type unlabeled_t }:fd *;
++    allow deepin_immutable_t { deepin_executable_file_type unlabeled_t }:key *;
++    allow deepin_immutable_t { deepin_executable_file_type unlabeled_t }:key_socket *;
++    allow deepin_immutable_t { deepin_executable_file_type unlabeled_t }:socket_class_set *;
++    allow deepin_immutable_t { deepin_executable_file_type unlabeled_t }:{ sem msg msgq shm ipc } *;
++    allow deepin_immutable_t { deepin_executable_file_type unlabeled_t }:association *;
++    allow deepin_immutable_t { deepin_executable_file_type unlabeled_t }:dbus { acquire_svc send_msg };
++    allow deepin_immutable_t { deepin_executable_file_type unlabeled_t }:dir_file_class_set *;
++    allow deepin_immutable_t { deepin_executable_file_type unlabeled_t }:system *;
++    allow deepin_immutable_t ipsec_spd_type:association *;
++    allow deepin_immutable_t port_type:{ tcp_socket udp_socket rawip_socket sctp_socket } *;
++    allow deepin_immutable_t { packet_type unlabeled_t }:packet *;
++    allow deepin_immutable_t { node_type unlabeled_t }:node *;
++    allow deepin_immutable_t { netif_type unlabeled_t }:netif *;
++    allow deepin_immutable_t { file_type filesystem_type proc_type sysctl_type }:dir_file_class_set *;
++    allow deepin_immutable_t device_node:dir_file_class_set *;
++    allow deepin_immutable_t { filesystem_type unlabeled_t }:filesystem *;
++    allow deepin_immutable_t { file_type deepin_file_type }:service *;
++    allow deepin_immutable_t security_t:security *;
++    allow deepin_immutable_t file_type:system *;
++    allow deepin_immutable_t deepin_file_type:filesystem *;
++    allow deepin_immutable_t deepin_file_type:dir_file_class_set *;
++    allow deepin_immutable_t deepin_executable_file_type:dir_file_class_set *;
 +
 +    type_transition deepin_immutable_t deepin_usec_t:process deepin_immutable_t;
 +    allow deepin_perm_manager_sidtwo_t usec_immutable_fs_t:filesystem { unmount remount };
@@ -96,8 +144,12 @@ Index: refpolicy/policy/modules/services/deepin_perm_control.te
 +    # 例如lastrore-daemon结束系统升级,需要会杀死deepin_immutable_ctl来结束系统升级
 +
 +    deepin_app_domain_set(deepin_system_service_t);
-+    allow deepin_system_service_t deepin_unkillable_t:process *;
-+    allow deepin_system_service_t deepin_unkillable_t:service *;
 +    allow deepin_system_service_t deepin_immutable_t:process *;
 +    allow deepin_system_service_t deepin_immutable_t:service *;
++    allow deepin_system_service_t deepin_unkillable_t:process *;
++    allow deepin_system_service_t deepin_unkillable_t:service *;
++    allow deepin_system_service_t deepin_usec_t:process *;
++    allow deepin_system_service_t deepin_usec_t:service *;
++    allow deepin_system_service_t apt_t:process *;
++    allow deepin_system_service_t dpkg_t:process *;
 +')
