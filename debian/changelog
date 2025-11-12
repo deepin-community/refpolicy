@@ -1,3 +1,10 @@
+refpolicy (2:2.20240723-2deepin16) unstable; urgency=medium
+
+  * fix: deepin_system_service_t kill dpkt_t/apt_t denied.
+         deepin_immutable_t op deepin_ro_file_t... denied
+
+ -- zhangya <zhangya@uniontech.com>  Wed, 12 Nov 2025 11:12:49 +0800
+
 refpolicy (2:2.20240723-2deepin15) unstable; urgency=medium
 
   * fix: usec: 添加deepin_system_service_t允许其杀deepin_unkillable_t
