@@ -1,3 +1,9 @@
+refpolicy (2:2.20240723-2deepin17) unstable; urgency=medium
+
+  * manage usec policy using the usec toolset.
+
+ -- zhouzilong <zhouzilong@uniontech.com>  Fri, 06 Mar 2026 10:58:04 +0800
+
 refpolicy (2:2.20240723-2deepin16) unstable; urgency=medium
 
   * fix: deepin_system_service_t kill dpkt_t/apt_t denied.

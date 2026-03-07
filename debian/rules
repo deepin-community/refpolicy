@@ -29,20 +29,30 @@ override_dh_fixperms:
 	dh_fixperms
 	chmod +x $(CURDIR)/debian/selinux-policy-dev/usr/share/selinux/devel/include/support/segenxml.py
 	for flavour in $(FLAVOURS) ; do \
-	  chmod 0700 $(CURDIR)/debian/selinux-policy-$$flavour/var/lib/selinux/$$flavour; \
+	  prefix=$$flavour; \
+	  if [ "$$flavour" != "usec" ]; then \
+	    prefix="selinux"; \
+	  fi; \
+	  chmod 0700 $(CURDIR)/debian/selinux-policy-$$flavour/var/lib/$$prefix/$$flavour; \
 	done
 
 override_dh_compress:
 	dh_compress
 	for flavour in $(FLAVOURS) ; do \
-	  find $(CURDIR)/debian/selinux-policy-$$flavour/usr/share/selinux/$$flavour/ -name "*.pp" | xargs -P $(NUMJOBS) -I STR sh -c "bzip2 -9 < STR > STR.bz2 && rm STR" ; \
+	  prefix=$$flavour; \
+	  if [ "$$flavour" != "usec" ]; then \
+	    prefix="selinux"; \
+	  fi; \
+	  find $(CURDIR)/debian/selinux-policy-$$flavour/usr/share/$$prefix/$$flavour/ -name "*.pp" | xargs -P $(NUMJOBS) -I STR sh -c "bzip2 -9 < STR > STR.bz2 && rm STR" ; \
 	done
 
 override_dh_installdeb:
 	for flavour in $(FLAVOURS) ; do \
-	  sed -e "s/=FLAVOUR=/$$flavour/g" debian/preinst.policy > $(CURDIR)/debian/selinux-policy-$$flavour.preinst; \
-	  sed -e "s/=FLAVOUR=/$$flavour/g" debian/postinst.policy > $(CURDIR)/debian/selinux-policy-$$flavour.postinst; \
-	  sed -e "s/=FLAVOUR=/$$flavour/g" debian/postrm.policy > $(CURDIR)/debian/selinux-policy-$$flavour.postrm; \
+	  if [ "$$flavour" != "usec" ]; then \
+	    sed -e "s/=FLAVOUR=/$$flavour/g" debian/preinst.policy > $(CURDIR)/debian/selinux-policy-$$flavour.preinst; \
+	    sed -e "s/=FLAVOUR=/$$flavour/g" debian/postinst.policy > $(CURDIR)/debian/selinux-policy-$$flavour.postinst; \
+	    sed -e "s/=FLAVOUR=/$$flavour/g" debian/postrm.policy > $(CURDIR)/debian/selinux-policy-$$flavour.postrm; \
+	  fi; \
 	done
 	dh_installdeb
 
@@ -126,19 +136,23 @@ test-%-policy: build-%-policy
 	touch $@
 
 install-%-policy: build-%-policy
-	(cd $(CURDIR)/debian/build-$*; \
-	    $(MAKE) NAME=$* TYPE=$(TYPE_$*) UBAC=$(UBAC_$*) UNK_PERMS=$(UNK_PERMS_$*) $(COMMON_OPTIONS) DESTDIR=$(CURDIR)/debian/tmp install)
-	cp -a debian/setrans.conf.$* $(CURDIR)/debian/tmp/etc/selinux/$*/setrans.conf
-	mkdir -p $(CURDIR)/debian/tmp/etc/selinux/$*/contexts/files/
-	mkdir -p $(CURDIR)/debian/tmp/etc/selinux/$*/policy/
-	mkdir -p $(CURDIR)/debian/tmp/var/lib/selinux/$*
-# Create a list with the modules we are shipping
-	(cd $(CURDIR)/debian/tmp/usr/share/selinux/$*; LC_ALL=C ls -1 *.pp | cut -d. -f1 > .modules)
-	(cd $(CURDIR)/debian/tmp/usr/share/selinux/$*; grep -P '^[a-z0-9_]+\s*=\s*base$$' $(CURDIR)/debian/build-$*/policy/modules.conf | cut -d= -f1 | awk '{$$1=$$1};1' | LC_ALL=C sort > .basemodules)
+	if [ "$*" = "usec" ]; then \
+		SELINUX_PREFIX=usec; \
+		$(MAKE) -C $(CURDIR)/debian/build-$* NAME=$* TYPE=$(TYPE_$*) UBAC=$(UBAC_$*) UNK_PERMS=$(UNK_PERMS_$*) $(COMMON_OPTIONS) DESTDIR=$(CURDIR)/debian/tmp install topdir=$(CURDIR)/debian/tmp/etc/usec sharedir=$(CURDIR)/debian/tmp/usr/share/usec; \
+	else \
+		SELINUX_PREFIX=selinux; \
+		$(MAKE) -C $(CURDIR)/debian/build-$* NAME=$* TYPE=$(TYPE_$*) UBAC=$(UBAC_$*) UNK_PERMS=$(UNK_PERMS_$*) $(COMMON_OPTIONS) DESTDIR=$(CURDIR)/debian/tmp install; \
+	fi; \
+	cp -a debian/setrans.conf.$* $(CURDIR)/debian/tmp/etc/$$SELINUX_PREFIX/$*/setrans.conf; \
+	mkdir -p $(CURDIR)/debian/tmp/etc/$$SELINUX_PREFIX/$*/contexts/files/; \
+	mkdir -p $(CURDIR)/debian/tmp/etc/$$SELINUX_PREFIX/$*/policy/; \
+	mkdir -p $(CURDIR)/debian/tmp/var/lib/$$SELINUX_PREFIX/$*; \
+	(cd $(CURDIR)/debian/tmp/usr/share/$$SELINUX_PREFIX/$*; LC_ALL=C ls -1 *.pp | cut -d. -f1 > .modules); \
+	(cd $(CURDIR)/debian/tmp/usr/share/$$SELINUX_PREFIX/$*; grep -P '^[a-z0-9_]+\s*=\s*base$$' $(CURDIR)/debian/build-$*/policy/modules.conf | cut -d= -f1 | awk '{$$1=$$1};1' | LC_ALL=C sort > .basemodules)
 	touch $@
 
 # The headers are based on the default policy
-install-default-dev: build-default-policy
+install-default-dev: install-default-policy
 	(cd $(CURDIR)/debian/build-default; \
 	    $(MAKE) NAME=default TYPE=$(TYPE_default) UBAC=$(UBAC_default) UNK_PERMS=$(UNK_PERMS_default) $(COMMON_OPTIONS) DESTDIR=$(CURDIR)/debian/tmp install-headers)
 	mkdir -p $(CURDIR)/debian/tmp/usr/share/selinux/devel/
@@ -149,18 +163,6 @@ install-default-dev: build-default-policy
 	mv $(CURDIR)/debian/tmp/usr/share/selinux/devel/include/kernel/selinux.if.new $(CURDIR)/debian/tmp/usr/share/selinux/devel/include/kernel/selinux.if
 	cp -a $(CURDIR)/debian/Makefile.devel $(CURDIR)/debian/tmp/usr/share/selinux/devel/Makefile
 	touch $@
-
-#install-usec-dev: build-usec-policy
-#	(cd $(CURDIR)/debian/build-usec; \
-#	    $(MAKE) NAME=usec TYPE=$(TYPE_usec) UBAC=$(UBAC_usec) UNK_PERMS=$(UNK_PERMS_usec) $(COMMON_OPTIONS) DESTDIR=$(CURDIR)/debian/tmp install-headers)
-#	mkdir -p $(CURDIR)/debian/tmp/usr/share/selinux/devel/
-#	mv $(CURDIR)/debian/tmp/usr/share/selinux/usec/include $(CURDIR)/debian/tmp/usr/share/selinux/devel/
-#	cp -a $(CURDIR)/debian/build-usec/doc/policy.dtd $(CURDIR)/debian/tmp/usr/share/selinux/devel/
-#	cp -a $(CURDIR)/debian/build-usec/doc/policy.xml $(CURDIR)/debian/tmp/usr/share/selinux/devel/
-#	grep -v genfscon.selinuxfs $(CURDIR)/debian/tmp/usr/share/selinux/devel/include/kernel/selinux.if > $(CURDIR)/debian/tmp/usr/share/selinux/devel/include/kernel/selinux.if.new
-#	mv $(CURDIR)/debian/tmp/usr/share/selinux/devel/include/kernel/selinux.if.new $(CURDIR)/debian/tmp/usr/share/selinux/devel/include/kernel/selinux.if
-#	cp -a $(CURDIR)/debian/Makefile.devel $(CURDIR)/debian/tmp/usr/share/selinux/devel/Makefile
-#	touch $@
 
 install-docs: conf-docs
 	(cd $(CURDIR)/debian/build-docs; \
