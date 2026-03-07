@@ -1,6 +1,6 @@
-etc/selinux/usec/
-usr/share/selinux/usec/.basemodules
-usr/share/selinux/usec/.modules
-usr/share/selinux/usec/*.pp
-var/lib/selinux/usec/
+etc/usec/usec/
+usr/share/usec/usec/.basemodules
+usr/share/usec/usec/.modules
+usr/share/usec/usec/*.pp
+var/lib/usec/usec/
 

@@ -61,11 +61,10 @@ Description: MLS (Multi Level Security) variant of the SELinux policy
 
 Package: selinux-policy-usec
 Architecture: all
-Depends: libselinux1 (>= 3.5),
-         libsemanage2 (>= 3.5),
+Depends: libsemanage2 (>= 3.5),
          libsepol2 (>= 3.5),
-         policycoreutils (>= 3.5-2),
-         selinux-utils (>= 3.5),
+         usec-policycoreutils (>= 3.5-2.1deepin19),
+         usec-utils,
          ${misc:Depends}
 Recommends: checkpolicy, setools
 Suggests: logcheck, syslog-summary
