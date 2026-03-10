@@ -60,9 +60,11 @@ override_dh_clean:
 	dh_clean
 	$(MAKE) bare
 	for flavour in $(FLAVOURS) ; do \
-	  rm -f $(CURDIR)/debian/selinux-policy-$$flavour.preinst; \
-	  rm -f $(CURDIR)/debian/selinux-policy-$$flavour.postinst; \
-	  rm -f $(CURDIR)/debian/selinux-policy-$$flavour.postrm; \
+	  if [ "$$flavour" != "usec" ]; then \
+	    rm -f $(CURDIR)/debian/selinux-policy-$$flavour.preinst; \
+	    rm -f $(CURDIR)/debian/selinux-policy-$$flavour.postinst; \
+	    rm -f $(CURDIR)/debian/selinux-policy-$$flavour.postrm; \
+	  fi; \
 	  rm -rf $(CURDIR)/debian/build-$$flavour; \
 	  rm -f build-$$flavour-policy; \
 	  rm -f install-$$flavour-policy; \
