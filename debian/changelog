@@ -1,3 +1,9 @@
+refpolicy (2:2.20240723-2deepin19) unstable; urgency=medium
+
+  * fix: allow unkillable service security_t compute_av.
+
+ -- zhangya <zhangya@uniontech.com>  Thu, 28 May 2026 23:34:40 +0800
+
 refpolicy (2:2.20240723-2deepin18) unstable; urgency=medium
 
   * correctly install debian/post*、pre* scripts.
