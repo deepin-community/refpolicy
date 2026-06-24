@@ -38,7 +38,7 @@ Index: refpolicy/policy/modules/services/deepin_perm_control.te
  
  allow deepin_executable_file_type self:file { exec_file_perms link execmod };
  
-@@ -868,31 +872,88 @@ allow deepin_home_sec_t self:filesystem
+@@ -868,31 +872,93 @@ allow deepin_home_sec_t self:filesystem
  allow deepin_executable_file_type deepin_home_sec_t:file ~{ relabelfrom relabelto };
  allow deepin_executable_file_type deepin_home_sec_t:dir list_dir_perms;
  
@@ -138,6 +138,11 @@ Index: refpolicy/policy/modules/services/deepin_perm_control.te
 +    deepin_app_domain_set(deepin_unkillable_t);
 +    allow deepin_unkillable_t self:service *;
 +    allow deepin_unkillable_t security_t:security {compute_av};
++    allow deepin_unkillable_t self:socket *;
++    allow deepin_unkillable_t self:fd *;
++    allow deepin_unkillable_t self:key_socket *;
++    allow deepin_unkillable_t self:key *;
++    allow deepin_unkillable_t self:context *;
 +    allow deepin_usec_t deepin_unkillable_t:process ~{ setcurrent setexec sigkill signal sigstop };
 +    allow deepin_usec_t deepin_unkillable_t:service ~{ stop disable };
 +
