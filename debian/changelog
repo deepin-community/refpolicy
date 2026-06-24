@@ -1,3 +1,9 @@
+refpolicy (2:2.20240723-2deepin20) unstable; urgency=medium
+
+  * fix: usec: denied deepin_unkillable_t socket create.
+
+ -- zhangya <zhangya@uniontech.com>  Wed, 24 Jun 2026 10:13:49 +0800
+
 refpolicy (2:2.20240723-2deepin19) unstable; urgency=medium
 
   * fix: allow unkillable service security_t compute_av.
