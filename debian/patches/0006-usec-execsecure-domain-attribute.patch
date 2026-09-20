@@ -1,0 +1,90 @@
+Description: usec: add execsecure process-domain attribute
+ Define the execsecure_domain attribute and its public interface.  The
+ USEC kernel uses membership in this attribute as the opt-in marker for
+ AT_SECURE handling, while process:noatsecure remains the transition
+ exemption.
+Author: UOS Security Team
+
+---
+ debian/execsecure_attribute_config.cil |  1 +
+ debian/selinux-policy-usec.install     |  1 +
+ debian/selinux-policy-usec.postinst    |  1 +
+ policy/modules/kernel/domain.if         | 20 ++++++++++++++++++++
+ policy/modules/kernel/domain.te         |  4 ++++
+ 5 files changed, 27 insertions(+)
+
+Index: refpolicy/debian/execsecure_attribute_config.cil
+===================================================================
+--- /dev/null
++++ refpolicy/debian/execsecure_attribute_config.cil
+@@ -0,0 +1 @@
++(expandtypeattribute execsecure_domain false)
+Index: refpolicy/debian/selinux-policy-usec.install
+===================================================================
+--- refpolicy.orig/debian/selinux-policy-usec.install
++++ refpolicy/debian/selinux-policy-usec.install
+@@ -2,5 +2,5 @@ etc/usec/usec/
+ usr/share/usec/usec/.basemodules
+ usr/share/usec/usec/.modules
+ usr/share/usec/usec/*.pp
++debian/execsecure_attribute_config.cil usr/share/usec/usec/
+ var/lib/usec/usec/
+-
+Index: refpolicy/debian/selinux-policy-usec.postinst
+===================================================================
+--- refpolicy.orig/debian/selinux-policy-usec.postinst
++++ refpolicy/debian/selinux-policy-usec.postinst
+@@ -93,6 +93,7 @@ case "$1" in
+ 	for module in `cat /usr/share/usec/${flavour}/.modules`; do
+ 	    to_install="$to_install -i/usr/share/usec/${flavour}/${module}.pp.bz2"
+ 	done
++	to_install="$to_install -i/usr/share/usec/${flavour}/execsecure_attribute_config.cil"
+ 
+ 	# Now build a list of the modules that we were shipping before but that we are not
+ 	# anymore and that we need to remove
+Index: refpolicy/policy/modules/kernel/domain.if
+===================================================================
+--- refpolicy.orig/policy/modules/kernel/domain.if
++++ refpolicy/policy/modules/kernel/domain.if
+@@ -33,6 +33,26 @@ interface(`domain_base_type',`
+ 
+ ########################################
+ ## <summary>
++##	Mark a process domain as requiring secure exec unless the
++##	source-to-target transition is granted noatsecure.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Process domain to protect.
++##	</summary>
++## </param>
++## <infoflow type="none"/>
++#
++interface(`domain_execsecure_protected',`
++	gen_require(`
++		attribute execsecure_domain;
++	')
++
++	typeattribute $1 execsecure_domain;
++')
++
++########################################
++## <summary>
+ ##	Make the specified type usable as a domain.
+ ## </summary>
+ ## <desc>
+Index: refpolicy/policy/modules/kernel/domain.te
+===================================================================
+--- refpolicy.orig/policy/modules/kernel/domain.te
++++ refpolicy/policy/modules/kernel/domain.te
+@@ -21,6 +21,10 @@ ifdef(`enable_usec',`
+ # Mark process types as domains
+ attribute domain;
+ 
++# Domains that require secure exec unless the source-to-target transition
++# is granted process:noatsecure.
++attribute execsecure_domain;
++
+ # Transitions only allowed from domains to other domains
+ #(zzl) neverallowdomain ~domain:process { dyntransition transition };
+ 
